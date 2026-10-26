@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('contact_notes', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('contact_message_id')->constrained('contact_messages')->cascadeOnDelete();
-            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('contact_message_id')->constrained('contact_messages')->cascadeOnDelete();
+            $table->foreignUuid('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('author_name')->default('Admin');
             $table->text('note');
             $table->timestamps();

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('contact_messages', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('visitor_name');
             $table->string('email');
             $table->string('phone')->nullable();
@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('ip_address', 45)->nullable();
             $table->enum('crm_status', ['new', 'contacted', 'in_progress', 'resolved', 'closed'])->default('new');
             $table->enum('priority', ['low', 'normal', 'high', 'urgent'])->default('normal');
-            $table->foreignId('handled_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignUuid('handled_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('last_contacted_at')->nullable();
             $table->timestamps();
         });

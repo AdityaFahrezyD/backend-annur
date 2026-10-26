@@ -3,102 +3,60 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Competition;
-use Illuminate\Http\Request;
+use App\Http\Requests\Api\Admin\ContentIndexRequest;
+use App\Http\Requests\Api\Admin\SaveCompetitionRequest;
+use App\Services\Api\Admin\CompetitionService;
+use Illuminate\Http\JsonResponse;
 
 class CompetitionController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(private CompetitionService $competitionService) {}
+
+    public function index(ContentIndexRequest $request): JsonResponse
     {
-        $query = Competition::orderBy('event_date', 'asc');
-
-        if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('search')) {
-            $s = $request->search;
-            $query->where(function ($q) use ($s) {
-                $q->where('title', 'like', "%{$s}%")
-                  ->orWhere('category', 'like', "%{$s}%");
-            });
-        }
-
         return response()->json([
             'success' => true,
-            'data' => $query->get()
+            'data' => $this->competitionService->index($request->validated()),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(SaveCompetitionRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:200',
-            'organizer' => 'required|string|max:150',
-            'category' => 'required|string|max:100',
-            'description' => 'nullable|string',
-            'registration_deadline' => 'nullable|date',
-            'event_date' => 'nullable|date',
-            'location' => 'nullable|string|max:200',
-            'guide_book_url' => 'nullable|string',
-            'banner_image' => 'nullable|string',
-            'is_featured' => 'boolean',
-            'status' => 'required|in:draft,published',
-        ]);
-
-        $competition = Competition::create($validated);
+        $competition = $this->competitionService->create($request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'Informasi lomba berhasil ditambahkan.',
-            'data' => $competition
+            'data' => $competition,
         ], 201);
     }
 
-    public function show($id)
+    public function show(string $id): JsonResponse
     {
-        $competition = Competition::findOrFail($id);
         return response()->json([
             'success' => true,
-            'data' => $competition
+            'data' => $this->competitionService->find($id),
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(SaveCompetitionRequest $request, string $id): JsonResponse
     {
-        $competition = Competition::findOrFail($id);
-
-        $validated = $request->validate([
-            'title' => 'required|string|max:200',
-            'organizer' => 'required|string|max:150',
-            'category' => 'required|string|max:100',
-            'description' => 'nullable|string',
-            'registration_deadline' => 'nullable|date',
-            'event_date' => 'nullable|date',
-            'location' => 'nullable|string|max:200',
-            'guide_book_url' => 'nullable|string',
-            'banner_image' => 'nullable|string',
-            'is_featured' => 'boolean',
-            'status' => 'required|in:draft,published',
-        ]);
-
-        $competition->update($validated);
+        $competition = $this->competitionService->update($id, $request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'Informasi lomba berhasil diperbarui.',
-            'data' => $competition
+            'data' => $competition,
         ]);
     }
 
-    public function destroy($id)
+    public function destroy(string $id): JsonResponse
     {
-        $competition = Competition::findOrFail($id);
-        $competition->delete();
+        $this->competitionService->delete($id);
 
         return response()->json([
             'success' => true,
-            'message' => 'Informasi lomba berhasil dihapus.'
+            'message' => 'Informasi lomba berhasil dihapus.',
         ]);
     }
 }

@@ -3,86 +3,60 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Curriculum;
-use Illuminate\Http\Request;
+use App\Http\Requests\Api\Admin\ContentIndexRequest;
+use App\Http\Requests\Api\Admin\SaveCurriculumRequest;
+use App\Services\Api\Admin\CurriculumService;
+use Illuminate\Http\JsonResponse;
 
 class CurriculumController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(private CurriculumService $curriculumService) {}
+
+    public function index(ContentIndexRequest $request): JsonResponse
     {
-        $query = Curriculum::orderBy('order', 'asc')->orderBy('id', 'asc');
-
-        if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
-        }
-
         return response()->json([
             'success' => true,
-            'data' => $query->get()
+            'data' => $this->curriculumService->index($request->validated()),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(SaveCurriculumRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:200',
-            'code' => 'nullable|string|max:50',
-            'level' => 'nullable|string|max:100',
-            'description' => 'required|string',
-            'features' => 'nullable|array',
-            'order' => 'integer',
-            'status' => 'required|in:draft,published',
-        ]);
-
-        $curriculum = Curriculum::create($validated);
+        $curriculum = $this->curriculumService->create($request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'Program kurikulum berhasil ditambahkan.',
-            'data' => $curriculum
+            'data' => $curriculum,
         ], 201);
     }
 
-    public function show($id)
+    public function show(string $id): JsonResponse
     {
-        $curriculum = Curriculum::findOrFail($id);
         return response()->json([
             'success' => true,
-            'data' => $curriculum
+            'data' => $this->curriculumService->find($id),
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(SaveCurriculumRequest $request, string $id): JsonResponse
     {
-        $curriculum = Curriculum::findOrFail($id);
-
-        $validated = $request->validate([
-            'title' => 'required|string|max:200',
-            'code' => 'nullable|string|max:50',
-            'level' => 'nullable|string|max:100',
-            'description' => 'required|string',
-            'features' => 'nullable|array',
-            'order' => 'integer',
-            'status' => 'required|in:draft,published',
-        ]);
-
-        $curriculum->update($validated);
+        $curriculum = $this->curriculumService->update($id, $request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'Program kurikulum berhasil diperbarui.',
-            'data' => $curriculum
+            'data' => $curriculum,
         ]);
     }
 
-    public function destroy($id)
+    public function destroy(string $id): JsonResponse
     {
-        $curriculum = Curriculum::findOrFail($id);
-        $curriculum->delete();
+        $this->curriculumService->delete($id);
 
         return response()->json([
             'success' => true,
-            'message' => 'Program kurikulum berhasil dihapus.'
+            'message' => 'Program kurikulum berhasil dihapus.',
         ]);
     }
 }

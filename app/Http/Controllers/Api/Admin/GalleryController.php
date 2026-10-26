@@ -3,88 +3,60 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Gallery;
-use Illuminate\Http\Request;
+use App\Http\Requests\Api\Admin\ContentIndexRequest;
+use App\Http\Requests\Api\Admin\SaveGalleryRequest;
+use App\Services\Api\Admin\GalleryService;
+use Illuminate\Http\JsonResponse;
 
 class GalleryController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(private GalleryService $galleryService) {}
+
+    public function index(ContentIndexRequest $request): JsonResponse
     {
-        $query = Gallery::orderBy('event_date', 'desc')->orderBy('id', 'desc');
-
-        if ($request->filled('category') && $request->category !== 'Semua') {
-            $query->where('category', $request->category);
-        }
-
-        if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
-        }
-
         return response()->json([
             'success' => true,
-            'data' => $query->get()
+            'data' => $this->galleryService->index($request->validated()),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(SaveGalleryRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:200',
-            'category' => 'required|string|max:100',
-            'image' => 'required|string',
-            'description' => 'nullable|string',
-            'event_date' => 'nullable|date',
-            'status' => 'required|in:draft,published',
-        ]);
-
-        $gallery = Gallery::create($validated);
+        $gallery = $this->galleryService->create($request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'Dokumentasi galeri berhasil ditambahkan.',
-            'data' => $gallery
+            'data' => $gallery,
         ], 201);
     }
 
-    public function show($id)
+    public function show(string $id): JsonResponse
     {
-        $gallery = Gallery::findOrFail($id);
         return response()->json([
             'success' => true,
-            'data' => $gallery
+            'data' => $this->galleryService->find($id),
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(SaveGalleryRequest $request, string $id): JsonResponse
     {
-        $gallery = Gallery::findOrFail($id);
-
-        $validated = $request->validate([
-            'title' => 'required|string|max:200',
-            'category' => 'required|string|max:100',
-            'image' => 'required|string',
-            'description' => 'nullable|string',
-            'event_date' => 'nullable|date',
-            'status' => 'required|in:draft,published',
-        ]);
-
-        $gallery->update($validated);
+        $gallery = $this->galleryService->update($id, $request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'Dokumentasi galeri berhasil diperbarui.',
-            'data' => $gallery
+            'data' => $gallery,
         ]);
     }
 
-    public function destroy($id)
+    public function destroy(string $id): JsonResponse
     {
-        $gallery = Gallery::findOrFail($id);
-        $gallery->delete();
+        $this->galleryService->delete($id);
 
         return response()->json([
             'success' => true,
-            'message' => 'Dokumentasi galeri berhasil dihapus.'
+            'message' => 'Dokumentasi galeri berhasil dihapus.',
         ]);
     }
 }

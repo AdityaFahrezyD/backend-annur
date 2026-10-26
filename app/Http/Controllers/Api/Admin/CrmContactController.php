@@ -3,125 +3,69 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ContactMessage;
-use App\Models\ContactNote;
-use Illuminate\Http\Request;
+use App\Http\Requests\Api\Admin\AddContactNoteRequest;
+use App\Http\Requests\Api\Admin\ContactIndexRequest;
+use App\Http\Requests\Api\Admin\UpdateContactStatusRequest;
+use App\Services\Api\Admin\CrmContactService;
+use Illuminate\Http\JsonResponse;
 
 class CrmContactController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(private CrmContactService $crmContactService) {}
+
+    public function index(ContactIndexRequest $request): JsonResponse
     {
-        $query = ContactMessage::with(['handler', 'notes'])->orderBy('created_at', 'desc');
-
-        if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('crm_status', $request->status);
-        }
-
-        if ($request->filled('priority') && $request->priority !== 'all') {
-            $query->where('priority', $request->priority);
-        }
-
-        if ($request->filled('search')) {
-            $s = $request->search;
-            $query->where(function ($q) use ($s) {
-                $q->where('visitor_name', 'like', "%{$s}%")
-                  ->orWhere('email', 'like', "%{$s}%")
-                  ->orWhere('phone', 'like', "%{$s}%")
-                  ->orWhere('subject', 'like', "%{$s}%")
-                  ->orWhere('message', 'like', "%{$s}%");
-            });
-        }
-
-        $messages = $query->paginate($request->input('per_page', 20));
-
         return response()->json([
             'success' => true,
-            'data' => $messages
+            'data' => $this->crmContactService->index($request->validated()),
         ]);
     }
 
-    public function show($id)
+    public function show(string $id): JsonResponse
     {
-        $contact = ContactMessage::with(['handler', 'notes.user'])->findOrFail($id);
-
         return response()->json([
             'success' => true,
-            'data' => $contact
+            'data' => $this->crmContactService->find($id),
         ]);
     }
 
-    public function updateStatus(Request $request, $id)
+    public function updateStatus(UpdateContactStatusRequest $request, string $id): JsonResponse
     {
-        $contact = ContactMessage::findOrFail($id);
-
-        $validated = $request->validate([
-            'crm_status' => 'required|in:new,contacted,in_progress,resolved,closed',
-            'priority' => 'nullable|in:low,normal,high,urgent',
-            'handled_by' => 'nullable|exists:users,id',
-        ]);
-
-        $updateData = ['crm_status' => $validated['crm_status']];
-
-        if (isset($validated['priority'])) {
-            $updateData['priority'] = $validated['priority'];
-        }
-
-        if (array_key_exists('handled_by', $validated)) {
-            $updateData['handled_by'] = $validated['handled_by'] ?: $request->user()->id;
-        } else if (!$contact->handled_by) {
-            $updateData['handled_by'] = $request->user()->id;
-        }
-
-        if ($validated['crm_status'] !== 'new') {
-            $updateData['last_contacted_at'] = now();
-        }
-
-        $contact->update($updateData);
+        $contact = $this->crmContactService->updateStatus(
+            $id,
+            $request->validated(),
+            $request->user(),
+        );
 
         return response()->json([
             'success' => true,
             'message' => 'Status CRM berhasil diperbarui.',
-            'data' => $contact->load(['handler', 'notes'])
+            'data' => $contact,
         ]);
     }
 
-    public function addNote(Request $request, $id)
+    public function addNote(AddContactNoteRequest $request, string $id): JsonResponse
     {
-        $contact = ContactMessage::findOrFail($id);
-
-        $validated = $request->validate([
-            'note' => 'required|string|min:3|max:2000',
-        ]);
-
-        $user = $request->user();
-
-        $note = ContactNote::create([
-            'contact_message_id' => $contact->id,
-            'user_id' => $user ? $user->id : null,
-            'author_name' => $user ? $user->name : 'Staff CRM',
-            'note' => $validated['note'],
-        ]);
-
-        $contact->update([
-            'last_contacted_at' => now(),
-            'handled_by' => $user ? $user->id : $contact->handled_by,
-        ]);
+        $note = $this->crmContactService->addNote(
+            $id,
+            $request->validated('note'),
+            $request->user(),
+        );
 
         return response()->json([
             'success' => true,
             'message' => 'Catatan tindak lanjut berhasil ditambahkan.',
-            'data' => $note
+            'data' => $note,
         ], 201);
     }
 
-    public function destroy($id)
+    public function destroy(string $id): JsonResponse
     {
-        $contact = ContactMessage::findOrFail($id);
-        $contact->delete();
+        $this->crmContactService->delete($id);
 
         return response()->json([
             'success' => true,
-            'message' => 'Data kontak berhasil dihapus.'
+            'message' => 'Data kontak berhasil dihapus.',
         ]);
     }
 }

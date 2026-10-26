@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('school_profiles', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->default('SMA Islam Terpadu An-Nur');
+            $table->uuid('id')->primary();
+            $table->string('name')->default('SD Plus An-Nur');
             $table->string('tagline')->default('Membentuk Generasi Berakhlak Mulia, Cerdas, dan Berprestasi Global');
             $table->text('description')->nullable();
             $table->text('history')->nullable();
@@ -27,10 +27,6 @@ return new class extends Migration
             $table->string('facebook_url')->nullable();
             $table->string('instagram_url')->nullable();
             $table->string('youtube_url')->nullable();
-            $table->string('principal_name')->nullable();
-            $table->string('principal_title')->default('Kepala Sekolah SMA IT An-Nur');
-            $table->text('principal_message')->nullable();
-            $table->string('principal_photo')->nullable();
             $table->string('accreditation')->default('A (Unggul)');
             $table->string('npsn')->default('20512345');
             $table->json('stats')->nullable();

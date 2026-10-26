@@ -3,100 +3,60 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Achievement;
-use Illuminate\Http\Request;
+use App\Http\Requests\Api\Admin\ContentIndexRequest;
+use App\Http\Requests\Api\Admin\SaveAchievementRequest;
+use App\Services\Api\Admin\AchievementService;
+use Illuminate\Http\JsonResponse;
 
 class AchievementController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(private AchievementService $achievementService) {}
+
+    public function index(ContentIndexRequest $request): JsonResponse
     {
-        $query = Achievement::orderBy('year', 'desc')->orderBy('id', 'desc');
-
-        if ($request->filled('category') && $request->category !== 'Semua') {
-            $query->where('category', $request->category);
-        }
-
-        if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('search')) {
-            $s = $request->search;
-            $query->where(function ($q) use ($s) {
-                $q->where('title', 'like', "%{$s}%")
-                  ->orWhere('recipient_name', 'like', "%{$s}%");
-            });
-        }
-
         return response()->json([
             'success' => true,
-            'data' => $query->get()
+            'data' => $this->achievementService->index($request->validated()),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(SaveAchievementRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:200',
-            'category' => 'required|string|max:100',
-            'level' => 'required|string|max:100',
-            'year' => 'required|string|max:10',
-            'recipient_name' => 'required|string|max:150',
-            'description' => 'nullable|string',
-            'image' => 'nullable|string',
-            'status' => 'required|in:draft,published',
-        ]);
-
-        $achievement = Achievement::create($validated);
+        $achievement = $this->achievementService->create($request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'Prestasi berhasil ditambahkan.',
-            'data' => $achievement
+            'data' => $achievement,
         ], 201);
     }
 
-    public function show($id)
+    public function show(string $id): JsonResponse
     {
-        $achievement = Achievement::findOrFail($id);
         return response()->json([
             'success' => true,
-            'data' => $achievement
+            'data' => $this->achievementService->find($id),
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(SaveAchievementRequest $request, string $id): JsonResponse
     {
-        $achievement = Achievement::findOrFail($id);
-
-        $validated = $request->validate([
-            'title' => 'required|string|max:200',
-            'category' => 'required|string|max:100',
-            'level' => 'required|string|max:100',
-            'year' => 'required|string|max:10',
-            'recipient_name' => 'required|string|max:150',
-            'description' => 'nullable|string',
-            'image' => 'nullable|string',
-            'status' => 'required|in:draft,published',
-        ]);
-
-        $achievement->update($validated);
+        $achievement = $this->achievementService->update($id, $request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'Prestasi berhasil diperbarui.',
-            'data' => $achievement
+            'data' => $achievement,
         ]);
     }
 
-    public function destroy($id)
+    public function destroy(string $id): JsonResponse
     {
-        $achievement = Achievement::findOrFail($id);
-        $achievement->delete();
+        $this->achievementService->delete($id);
 
         return response()->json([
             'success' => true,
-            'message' => 'Prestasi berhasil dihapus.'
+            'message' => 'Prestasi berhasil dihapus.',
         ]);
     }
 }

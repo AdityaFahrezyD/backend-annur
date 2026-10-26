@@ -29,6 +29,11 @@ Route::get('/stats', [PublicController::class, 'stats']);
 
 // Direct Login (tanpa prefix v1 atau auth)
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
+Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
+    ->middleware(['signed', 'throttle:6,1'])
+    ->name('verification.verify');
 
 /*
 |--------------------------------------------------------------------------
@@ -38,8 +43,12 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/email/verify', [AuthController::class, 'verificationNotice'])->name('verification.notice');
+    Route::post('/email/verification-notification', [AuthController::class, 'sendEmailVerification'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
 
-    Route::prefix('admin')->group(function () {
+    Route::prefix('admin')->middleware('verified')->group(function () {
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index']);
 

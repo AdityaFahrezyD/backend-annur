@@ -3,95 +3,60 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Teacher;
-use Illuminate\Http\Request;
+use App\Http\Requests\Api\Admin\ContentIndexRequest;
+use App\Http\Requests\Api\Admin\SaveTeacherRequest;
+use App\Services\Api\Admin\TeacherService;
+use Illuminate\Http\JsonResponse;
 
 class TeacherController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(private TeacherService $teacherService) {}
+
+    public function index(ContentIndexRequest $request): JsonResponse
     {
-        $query = Teacher::orderBy('order', 'asc')->orderBy('id', 'asc');
-
-        if ($request->filled('search')) {
-            $s = $request->search;
-            $query->where(function ($q) use ($s) {
-                $q->where('name', 'like', "%{$s}%")
-                  ->orWhere('subject', 'like', "%{$s}%")
-                  ->orWhere('role_title', 'like', "%{$s}%");
-            });
-        }
-
         return response()->json([
             'success' => true,
-            'data' => $query->get()
+            'data' => $this->teacherService->index($request->validated()),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(SaveTeacherRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:150',
-            'nip' => 'nullable|string|max:50',
-            'subject' => 'required|string|max:100',
-            'role_title' => 'nullable|string|max:100',
-            'education' => 'nullable|string|max:150',
-            'photo' => 'nullable|string',
-            'bio' => 'nullable|string',
-            'is_active' => 'boolean',
-            'order' => 'integer',
-        ]);
-
-        $teacher = Teacher::create($validated);
+        $teacher = $this->teacherService->create($request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'Data guru berhasil ditambahkan.',
-            'data' => $teacher
+            'data' => $teacher,
         ], 201);
     }
 
-    public function show($id)
+    public function show(string $id): JsonResponse
     {
-        $teacher = Teacher::findOrFail($id);
         return response()->json([
             'success' => true,
-            'data' => $teacher
+            'data' => $this->teacherService->find($id),
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(SaveTeacherRequest $request, string $id): JsonResponse
     {
-        $teacher = Teacher::findOrFail($id);
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:150',
-            'nip' => 'nullable|string|max:50',
-            'subject' => 'required|string|max:100',
-            'role_title' => 'nullable|string|max:100',
-            'education' => 'nullable|string|max:150',
-            'photo' => 'nullable|string',
-            'bio' => 'nullable|string',
-            'is_active' => 'boolean',
-            'order' => 'integer',
-        ]);
-
-        $teacher->update($validated);
+        $teacher = $this->teacherService->update($id, $request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'Data guru berhasil diperbarui.',
-            'data' => $teacher
+            'data' => $teacher,
         ]);
     }
 
-    public function destroy($id)
+    public function destroy(string $id): JsonResponse
     {
-        $teacher = Teacher::findOrFail($id);
-        $teacher->delete();
+        $this->teacherService->delete($id);
 
         return response()->json([
             'success' => true,
-            'message' => 'Data guru berhasil dihapus.'
+            'message' => 'Data guru berhasil dihapus.',
         ]);
     }
 }
