@@ -14,6 +14,7 @@ class Curriculum extends Model
 
     protected $fillable = [
         'title',
+        'section',
         'code',
         'level',
         'description',

@@ -6,15 +6,16 @@ use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
+    use EnsuresSafeDemoDatabase;
+
     public function run(): void
     {
+        $this->ensureSafeDemoDatabase();
+
         $this->call([
             UserSeeder::class,
-            SchoolProfileSeeder::class,
             TeacherSeeder::class,
+            SchoolProfileSeeder::class,
             AchievementSeeder::class,
             CompetitionSeeder::class,
             CurriculumSeeder::class,

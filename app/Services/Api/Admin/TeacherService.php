@@ -5,6 +5,7 @@ namespace App\Services\Api\Admin;
 use App\Models\Teacher;
 use App\Services\Api\PublicApiCache;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Validation\ValidationException;
 
 class TeacherService
 {
@@ -54,7 +55,15 @@ class TeacherService
 
     public function delete(string $id): void
     {
-        $this->find($id)->delete();
+        $teacher = $this->find($id);
+
+        if ($teacher->principals()->exists()) {
+            throw ValidationException::withMessages([
+                'teacher' => 'Data guru yang memiliki riwayat kepala sekolah tidak dapat dihapus. Nonaktifkan guru untuk mengarsipkannya.',
+            ]);
+        }
+
+        $teacher->delete();
         $this->invalidatePublicCache();
     }
 

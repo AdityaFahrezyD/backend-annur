@@ -14,8 +14,9 @@ return new class extends Migration
         Schema::create('curriculums', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('title');
+            $table->enum('section', ['pillar', 'level'])->default('pillar');
             $table->string('code')->nullable();
-            $table->string('level')->default('SMA');
+            $table->string('level')->default('SD');
             $table->text('description');
             $table->json('features')->nullable();
             $table->integer('order')->default(0);

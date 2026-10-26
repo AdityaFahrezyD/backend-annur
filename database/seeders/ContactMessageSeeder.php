@@ -9,11 +9,13 @@ use Illuminate\Database\Seeder;
 
 class ContactMessageSeeder extends Seeder
 {
+    use EnsuresSafeDemoDatabase;
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
+        $this->ensureSafeDemoDatabase();
         ContactMessage::truncate();
         ContactNote::truncate();
 

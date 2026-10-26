@@ -24,6 +24,7 @@ class SaveCurriculumRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:200'],
+            'section' => ['required', 'in:pillar,level'],
             'code' => ['nullable', 'string', 'max:50'],
             'level' => ['nullable', 'string', 'max:100'],
             'description' => ['required', 'string'],

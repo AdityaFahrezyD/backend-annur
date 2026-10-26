@@ -13,20 +13,15 @@ return new class extends Migration
     {
         Schema::create('principals', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('school_profile_id');
-            $table->string('name');
+            $table->foreignUuid('school_profile_id')->constrained()->restrictOnDelete();
+            $table->foreignUuid('teacher_id')->constrained('teachers')->restrictOnDelete();
             $table->string('title')->nullable()->default('Kepala Sekolah An-Nur');
             $table->text('message')->nullable();
-            $table->string('photo')->nullable();
             $table->date('started_at')->nullable();
             $table->date('ended_at')->nullable();
             $table->boolean('is_current')->default(false);
             $table->timestamps();
 
-            $table->foreign('school_profile_id')
-                ->references('id')
-                ->on('school_profiles')
-                ->restrictOnDelete();
         });
     }
 

@@ -17,11 +17,28 @@ class PublicApiRoutesTest extends ApiTestCase
         Teacher::query()->create([
             'name' => 'Guru Aktif',
             'subject' => 'Fisika',
+            'gender' => 'L',
+            'certifications' => ['Sertifikasi Guru'],
+            'experience' => '10 tahun',
+            'is_leadership' => true,
             'is_active' => true,
         ]);
         Teacher::query()->create([
             'name' => 'Guru Nonaktif',
             'subject' => 'Kimia',
+            'is_active' => false,
+        ]);
+        $principalTeacher = Teacher::query()->create([
+            'name' => 'Kepala Sekolah Aktif',
+            'subject' => 'Pimpinan',
+            'education' => 'S1 Pendidikan',
+            'experience' => '15 tahun',
+            'bio' => 'Mendidik dengan kasih sayang.',
+            'is_active' => true,
+        ]);
+        $formerPrincipalTeacher = Teacher::query()->create([
+            'name' => 'Kepala Sekolah Sebelumnya',
+            'subject' => 'Pimpinan',
             'is_active' => false,
         ]);
         Achievement::query()->create([
@@ -30,6 +47,7 @@ class PublicApiRoutesTest extends ApiTestCase
             'level' => 'Nasional',
             'year' => '2026',
             'recipient_name' => 'Tim An-Nur',
+            'organizer' => 'Dinas Pendidikan',
             'status' => 'published',
         ]);
         Achievement::query()->create([
@@ -42,6 +60,8 @@ class PublicApiRoutesTest extends ApiTestCase
             'title' => 'Olimpiade Sains',
             'organizer' => 'An-Nur',
             'category' => 'Akademik',
+            'level' => 'Kabupaten',
+            'display_status' => 'Pendaftaran Dibuka',
             'event_date' => '2026-11-01',
             'status' => 'published',
         ]);
@@ -51,6 +71,7 @@ class PublicApiRoutesTest extends ApiTestCase
         ]);
         Curriculum::query()->create([
             'title' => 'Kurikulum Tahfiz',
+            'section' => 'pillar',
             'description' => 'Program pembelajaran tahfiz.',
             'status' => 'published',
         ]);
@@ -66,19 +87,35 @@ class PublicApiRoutesTest extends ApiTestCase
             'status' => 'draft',
         ]);
 
-        $profile = SchoolProfile::query()->create(['name' => 'SMA Islam Terpadu An-Nur']);
+        $profile = SchoolProfile::query()->create([
+            'name' => 'SD Plus An-Nur',
+            'vision_title' => 'Visi Sekolah',
+            'vision' => ['Sekolah dasar Islam unggul.'],
+            'public_sections' => ['school_status' => 'Sekolah Dasar Swasta'],
+        ]);
         Principal::query()->create([
             'school_profile_id' => $profile->id,
-            'name' => 'Kepala Sekolah Aktif',
+            'teacher_id' => $principalTeacher->id,
             'title' => 'Kepala Sekolah',
             'started_at' => '2025-07-01',
             'is_current' => true,
+        ]);
+        Principal::query()->create([
+            'school_profile_id' => $profile->id,
+            'teacher_id' => $formerPrincipalTeacher->id,
+            'title' => 'Kepala Sekolah Sebelumnya',
+            'started_at' => '2020-07-01',
+            'ended_at' => '2025-06-30',
+            'is_current' => false,
         ]);
 
         $this->getJson('/api/profile')
             ->assertOk()
             ->assertJsonPath('data.principal_name', 'Kepala Sekolah Aktif')
-            ->assertJsonPath('data.principal_history.0.name', 'Kepala Sekolah Aktif');
+            ->assertJsonPath('data.principal_history.0.name', 'Kepala Sekolah Aktif')
+            ->assertJsonPath('data.public_sections.school_status', 'Sekolah Dasar Swasta')
+            ->assertJsonPath('data.current_principal.education', 'S1 Pendidikan')
+            ->assertJsonPath('data.principal_history.1.name', 'Kepala Sekolah Sebelumnya');
 
         $this->getJson('/api/teachers?search=Aktif&subject=Fisika')
             ->assertOk()
@@ -106,7 +143,7 @@ class PublicApiRoutesTest extends ApiTestCase
 
         $this->getJson('/api/stats')
             ->assertOk()
-            ->assertJsonPath('data.total_teachers', 1)
+            ->assertJsonPath('data.total_teachers', 2)
             ->assertJsonPath('data.total_achievements', 1)
             ->assertJsonPath('data.total_competitions', 1)
             ->assertJsonPath('data.total_galleries', 1);
@@ -142,11 +179,19 @@ class PublicApiRoutesTest extends ApiTestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['email', 'subject', 'message']);
 
+        $this->postJson('/api/contact', [
+            'name' => 'Siti Aminah',
+            'email' => 'alamat-tidak-valid',
+            'subject' => 'Informasi pendaftaran',
+            'message' => 'Pendek',
+        ])->assertUnprocessable()->assertJsonValidationErrors(['email', 'message']);
+
         $this->assertDatabaseCount('contact_messages', 0);
     }
 
     public function test_public_cache_separates_filters_and_refreshes_after_admin_updates(): void
     {
+        config(['api-cache.public_ttl' => 300]);
         $teacher = Teacher::query()->create([
             'name' => 'Guru Matematika',
             'subject' => 'Matematika',

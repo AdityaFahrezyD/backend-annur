@@ -10,6 +10,14 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class SchoolProfile extends Model
 {
+    protected function casts(): array
+    {
+        return [
+            'vision' => 'array',
+            'missions' => 'array',
+        ];
+    }
+
     use HasFactory, HasUuids;
 
     protected $fillable = [
@@ -17,8 +25,11 @@ class SchoolProfile extends Model
         'tagline',
         'description',
         'history',
+        'vision_title',
         'vision',
+        'mission_title',
         'missions',
+        'public_sections',
         'address',
         'phone',
         'whatsapp',
@@ -35,6 +46,7 @@ class SchoolProfile extends Model
     protected $casts = [
         'missions' => 'array',
         'stats' => 'array',
+        'public_sections' => 'array',
     ];
 
     protected $appends = [

@@ -17,7 +17,9 @@ return new class extends Migration
             $table->string('tagline')->default('Membentuk Generasi Berakhlak Mulia, Cerdas, dan Berprestasi Global');
             $table->text('description')->nullable();
             $table->text('history')->nullable();
-            $table->text('vision')->nullable();
+            $table->string('vision_title')->nullable();
+            $table->json('vision')->nullable();
+            $table->string('mission_title')->nullable();
             $table->json('missions')->nullable();
             $table->string('address')->nullable();
             $table->string('phone')->nullable();
@@ -30,6 +32,7 @@ return new class extends Migration
             $table->string('accreditation')->default('A (Unggul)');
             $table->string('npsn')->default('20512345');
             $table->json('stats')->nullable();
+            $table->json('public_sections')->nullable();
             $table->timestamps();
         });
     }

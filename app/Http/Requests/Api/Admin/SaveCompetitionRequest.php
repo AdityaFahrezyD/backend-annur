@@ -26,6 +26,8 @@ class SaveCompetitionRequest extends FormRequest
             'title' => ['required', 'string', 'max:200'],
             'organizer' => ['required', 'string', 'max:150'],
             'category' => ['required', 'string', 'max:100'],
+            'level' => ['nullable', 'string', 'max:100'],
+            'display_status' => ['nullable', 'string', 'max:100'],
             'description' => ['nullable', 'string'],
             'registration_deadline' => ['nullable', 'date'],
             'event_date' => ['nullable', 'date'],

@@ -28,6 +28,7 @@ class SaveAchievementRequest extends FormRequest
             'level' => ['required', 'string', 'max:100'],
             'year' => ['required', 'string', 'max:10'],
             'recipient_name' => ['required', 'string', 'max:150'],
+            'organizer' => ['nullable', 'string', 'max:150'],
             'description' => ['nullable', 'string'],
             'image' => ['nullable', 'string'],
             'status' => ['required', 'in:draft,published'],

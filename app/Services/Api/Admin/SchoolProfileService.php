@@ -3,9 +3,11 @@
 namespace App\Services\Api\Admin;
 
 use App\Models\SchoolProfile;
+use App\Models\Teacher;
 use App\Services\Api\PublicApiCache;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SchoolProfileService
 {
@@ -14,7 +16,7 @@ class SchoolProfileService
     public function show(): SchoolProfile
     {
         $profile = SchoolProfile::query()->firstOrCreate([], [
-            'name' => 'SMA Islam Terpadu An-Nur',
+            'name' => 'SD Plus An-Nur',
             'tagline' => 'Membentuk Generasi Berakhlak Mulia, Cerdas, dan Berprestasi Global',
         ]);
 
@@ -22,7 +24,7 @@ class SchoolProfileService
             $this->publicApiCache->invalidate('profile', 'stats');
         }
 
-        return $profile->load(['currentPrincipal', 'principalHistory']);
+        return $profile->load(['currentPrincipal.teacher', 'principalHistory.teacher']);
     }
 
     /** @param array<string, mixed> $data */
@@ -34,12 +36,15 @@ class SchoolProfileService
                 'principal_name',
                 'principal_title',
                 'principal_message',
+                'principal_education',
+                'principal_experience',
+                'principal_bio',
                 'principal_photo',
             ]));
 
             $this->syncPrincipal($profile, $data);
 
-            return $profile->load(['currentPrincipal', 'principalHistory']);
+            return $profile->load(['currentPrincipal.teacher', 'principalHistory.teacher']);
         });
 
         $this->publicApiCache->invalidate('profile', 'stats');
@@ -50,14 +55,39 @@ class SchoolProfileService
     /** @param array<string, mixed> $data */
     private function syncPrincipal(SchoolProfile $profile, array $data): void
     {
-        $principalData = Arr::only($data, [
-            'principal_title',
-            'principal_message',
-            'principal_photo',
-        ]);
-        $currentPrincipal = $profile->principalHistory()->where('is_current', true)->first();
+        $teacherData = [];
+        foreach ([
+            'principal_education' => 'education',
+            'principal_experience' => 'experience',
+            'principal_bio' => 'bio',
+            'principal_photo' => 'photo',
+        ] as $input => $column) {
+            if (array_key_exists($input, $data)) {
+                $teacherData[$column] = $data[$input];
+            }
+        }
+
+        $principalData = [];
+        foreach ([
+            'principal_title' => 'title',
+            'principal_message' => 'message',
+        ] as $input => $column) {
+            if (array_key_exists($input, $data)) {
+                $principalData[$column] = $data[$input];
+            }
+        }
+
+        $currentPrincipal = $profile->principalHistory()
+            ->with('teacher')
+            ->where('is_current', true)
+            ->orderByDesc('started_at')
+            ->lockForUpdate()
+            ->first();
 
         if (! array_key_exists('principal_name', $data)) {
+            if ($teacherData !== []) {
+                $currentPrincipal?->teacher?->update($teacherData);
+            }
             if ($principalData !== []) {
                 $currentPrincipal?->update($principalData);
             }
@@ -65,9 +95,9 @@ class SchoolProfileService
             return;
         }
 
-        $name = $data['principal_name'];
+        $name = is_string($data['principal_name']) ? trim($data['principal_name']) : '';
 
-        if ($name === null || trim($name) === '') {
+        if ($name === '') {
             $currentPrincipal?->update([
                 'is_current' => false,
                 'ended_at' => now()->toDateString(),
@@ -76,7 +106,25 @@ class SchoolProfileService
             return;
         }
 
-        if ($currentPrincipal?->name === $name) {
+        $matchingTeachers = Teacher::query()
+            ->where('name', $name)
+            ->limit(2)
+            ->get();
+
+        if ($matchingTeachers->count() !== 1) {
+            throw ValidationException::withMessages([
+                'principal_name' => $matchingTeachers->isEmpty()
+                    ? 'Nama kepala sekolah harus cocok dengan satu data Teacher yang sudah ada.'
+                    : 'Nama kepala sekolah cocok dengan lebih dari satu data Teacher; rapikan data nama yang duplikat.',
+            ]);
+        }
+
+        $teacher = $matchingTeachers->first();
+        if ($teacherData !== []) {
+            $teacher->update($teacherData);
+        }
+
+        if ($currentPrincipal?->teacher_id === $teacher->id) {
             if ($principalData !== []) {
                 $currentPrincipal->update($principalData);
             }
@@ -90,7 +138,7 @@ class SchoolProfileService
         ]);
 
         $profile->principalHistory()->create([
-            'name' => $name,
+            'teacher_id' => $teacher->id,
             ...$principalData,
             'started_at' => now()->toDateString(),
             'is_current' => true,

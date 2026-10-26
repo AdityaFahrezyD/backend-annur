@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('year')->default('2026');
             $table->string('recipient_name');
             $table->text('description')->nullable();
+            $table->string('organizer')->nullable();
             $table->string('image')->nullable();
             $table->enum('status', ['draft', 'published'])->default('published');
             $table->timestamps();

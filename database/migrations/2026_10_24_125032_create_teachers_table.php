@@ -20,6 +20,10 @@ return new class extends Migration
             $table->string('education')->nullable();
             $table->string('photo')->nullable();
             $table->text('bio')->nullable();
+            $table->enum('gender', ['L', 'P'])->nullable();
+            $table->json('certifications')->nullable();
+            $table->string('experience')->nullable();
+            $table->boolean('is_leadership')->default(false);
             $table->boolean('is_active')->default(true);
             $table->integer('order')->default(0);
             $table->timestamps();

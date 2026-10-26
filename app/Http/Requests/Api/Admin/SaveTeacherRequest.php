@@ -30,6 +30,11 @@ class SaveTeacherRequest extends FormRequest
             'education' => ['nullable', 'string', 'max:150'],
             'photo' => ['nullable', 'string'],
             'bio' => ['nullable', 'string'],
+            'gender' => ['nullable', 'in:L,P'],
+            'certifications' => ['nullable', 'array'],
+            'certifications.*' => ['string', 'max:150'],
+            'experience' => ['nullable', 'string', 'max:255'],
+            'is_leadership' => ['boolean'],
             'is_active' => ['boolean'],
             'order' => ['integer'],
         ];

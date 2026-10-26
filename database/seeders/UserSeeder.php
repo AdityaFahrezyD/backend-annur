@@ -8,11 +8,13 @@ use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
+    use EnsuresSafeDemoDatabase;
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
+        $this->ensureSafeDemoDatabase();
         User::updateOrCreate(
             ['email' => 'admin@annur.sch.id'],
             [

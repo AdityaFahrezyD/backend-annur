@@ -15,7 +15,7 @@ class PublicContentService
 {
     public function profile(): ?SchoolProfile
     {
-        return SchoolProfile::query()->with(['currentPrincipal', 'principalHistory'])->first();
+        return SchoolProfile::query()->with(['currentPrincipal.teacher', 'principalHistory.teacher'])->first();
     }
 
     /** @param array<string, mixed> $filters */

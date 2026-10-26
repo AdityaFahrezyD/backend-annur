@@ -14,8 +14,10 @@ return new class extends Migration
         Schema::create('competitions', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('title');
-            $table->string('organizer')->default('SMA IT An-Nur Kediri');
+            $table->string('organizer')->default('SD Plus An-Nur');
             $table->string('category')->default('Umum');
+            $table->string('level')->nullable();
+            $table->string('display_status')->nullable();
             $table->text('description')->nullable();
             $table->date('registration_deadline')->nullable();
             $table->date('event_date')->nullable();

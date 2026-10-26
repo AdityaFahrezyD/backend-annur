@@ -7,66 +7,37 @@ use Illuminate\Database\Seeder;
 
 class GallerySeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
+    use EnsuresSafeDemoDatabase;
+
     public function run(): void
     {
-        Gallery::truncate();
-
-        $galleries = [
-            [
-                'title' => 'Kegiatan Pembelajaran Aktif di Laboratorium Sains Modern',
-                'category' => 'Kegiatan Belajar',
-                'image' => 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80',
-                'description' => 'Siswa kelas XI MIPA melakukan praktikum analisis spektrofotometri dan bioteknologi.',
-                'event_date' => '2026-10-12',
-                'status' => 'published',
-            ],
-            [
-                'title' => 'Upacara Peringatan Hari Santri & Apel Karakter Kebangsaan',
-                'category' => 'Upacara & Apel',
-                'image' => 'https://images.unsplash.com/photo-1577495508048-b635879837f1?w=800&auto=format&fit=crop&q=80',
-                'description' => 'Khidmatnya seluruh dewan guru dan santri dalam balutan busana santri nasional.',
-                'event_date' => '2026-10-22',
-                'status' => 'published',
-            ],
-            [
-                'title' => 'Tasmi\' Akbar Hafalan 30 Juz Al-Qur\'an',
-                'category' => 'Kegiatan Belajar',
-                'image' => 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=800&auto=format&fit=crop&q=80',
-                'description' => 'Pelaksanaan Tasmi\' bil Ghoib sekali duduk 30 juz oleh santri Takhasus An-Nur.',
-                'event_date' => '2026-09-30',
-                'status' => 'published',
-            ],
-            [
-                'title' => 'Kemenangan Tim Robotik pada Ajang National Robotic Expo',
-                'category' => 'Lomba & Prestasi',
-                'image' => 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=800&auto=format&fit=crop&q=80',
-                'description' => 'Penyerahan trofi juara umum oleh juri kompetisi teknologi di Surabaya.',
-                'event_date' => '2026-09-18',
-                'status' => 'published',
-            ],
-            [
-                'title' => 'Kegiatan Keputrian & Ekstrakurikuler Memanah (Archery)',
-                'category' => 'Ekstrakurikuler',
-                'image' => 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&auto=format&fit=crop&q=80',
-                'description' => 'Latihan fokus dan ketangkasan olahraga sunnah memanah di lapangan utama sekolah.',
-                'event_date' => '2026-08-25',
-                'status' => 'published',
-            ],
-            [
-                'title' => 'Fasilitas Perpustakaan Digital & Ruang Diskusi Kolaboratif',
-                'category' => 'Fasilitas',
-                'image' => 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&auto=format&fit=crop&q=80',
-                'description' => 'Suasana belajar mandiri yang nyaman dan tenang dilengkapi ribuan e-book serta jurnal.',
-                'event_date' => '2026-08-10',
-                'status' => 'published',
-            ]
+        $this->ensureSafeDemoDatabase();
+        Gallery::query()->delete();
+        $items = [
+            ['Pembelajaran Aktif Kurikulum SD Merdeka di Ruang Kelas', 'Kegiatan Belajar', '2026-10-12'],
+            ['Gelar Karya Projek Penguatan Profil Pelajar Pancasila (P5)', 'Projek P5', '2026-10-10'],
+            ['Bimbingan Tahfidz Juz 30 & Tahsin Al-Qur’an Pagi', 'Hafalan Qur’an', '2026-10-08'],
+            ['Shalat Dhuha & Zhuhur Berjamaah di Musholla', 'Hafalan Qur’an', '2026-10-06'],
+            ['Aktivitas Literasi di Perpustakaan Sekolah', 'Sarana Sekolah', '2026-10-04'],
+            ['Kegiatan Pramuka Siaga & Senam Sehat', 'Kegiatan Belajar', '2026-10-02'],
         ];
-
-        foreach ($galleries as $g) {
-            Gallery::create($g);
+        $photos = [
+            'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?w=800&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?w=800&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=800&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80',
+        ];
+        foreach ($items as $index => [$title, $category, $date]) {
+            Gallery::query()->create([
+                'title' => $title,
+                'category' => $category,
+                'image' => $photos[$index],
+                'description' => $title,
+                'event_date' => $date,
+                'status' => 'published',
+            ]);
         }
     }
 }

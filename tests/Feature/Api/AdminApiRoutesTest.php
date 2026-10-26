@@ -7,6 +7,8 @@ use App\Models\Competition;
 use App\Models\ContactMessage;
 use App\Models\Curriculum;
 use App\Models\Gallery;
+use App\Models\Principal;
+use App\Models\SchoolProfile;
 use App\Models\Teacher;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -50,7 +52,7 @@ class AdminApiRoutesTest extends ApiTestCase
             'curriculums' => [
                 '/api/admin/curriculums',
                 Curriculum::class,
-                ['title' => 'Kurikulum Tahfiz', 'description' => 'Program tahfiz.', 'status' => 'published'],
+                ['title' => 'Kurikulum Tahfiz', 'section' => 'pillar', 'description' => 'Program tahfiz.', 'status' => 'published'],
                 'title',
             ],
             'galleries' => [
@@ -122,6 +124,70 @@ class AdminApiRoutesTest extends ApiTestCase
             ->assertJsonPath('success', true);
 
         $this->assertModelMissing($record);
+    }
+
+    public function test_verified_admin_can_save_extended_public_content_fields(): void
+    {
+        $this->authenticateApiUser();
+
+        $teacher = $this->postJson('/api/admin/teachers', [
+            'name' => 'Guru An-Nur',
+            'subject' => 'Guru Kelas',
+            'gender' => 'P',
+            'certifications' => ['Sertifikasi Guru'],
+            'experience' => '10 tahun',
+            'is_leadership' => true,
+        ])->assertCreated()
+            ->assertJsonPath('data.gender', 'P')
+            ->assertJsonPath('data.certifications.0', 'Sertifikasi Guru')
+            ->assertJsonPath('data.experience', '10 tahun')
+            ->assertJsonPath('data.is_leadership', true);
+        $this->assertDatabaseHas('teachers', [
+            'id' => $teacher->json('data.id'),
+            'gender' => 'P',
+            'experience' => '10 tahun',
+        ]);
+
+        $achievement = $this->postJson('/api/admin/achievements', [
+            'title' => 'Juara Sains',
+            'category' => 'Akademik',
+            'level' => 'Kabupaten',
+            'year' => '2026',
+            'recipient_name' => 'Siswa An-Nur',
+            'organizer' => 'Dinas Pendidikan',
+            'status' => 'published',
+        ])->assertCreated()->assertJsonPath('data.organizer', 'Dinas Pendidikan');
+        $this->assertDatabaseHas('achievements', [
+            'id' => $achievement->json('data.id'),
+            'organizer' => 'Dinas Pendidikan',
+        ]);
+
+        $competition = $this->postJson('/api/admin/competitions', [
+            'title' => 'Festival Sains',
+            'organizer' => 'SD Plus An-Nur',
+            'category' => 'Sains',
+            'level' => 'Kabupaten',
+            'display_status' => 'Pendaftaran Dibuka',
+            'status' => 'published',
+        ])->assertCreated()
+            ->assertJsonPath('data.level', 'Kabupaten')
+            ->assertJsonPath('data.display_status', 'Pendaftaran Dibuka');
+        $this->assertDatabaseHas('competitions', [
+            'id' => $competition->json('data.id'),
+            'level' => 'Kabupaten',
+            'display_status' => 'Pendaftaran Dibuka',
+        ]);
+
+        $curriculum = $this->postJson('/api/admin/curriculums', [
+            'title' => 'Kurikulum SD',
+            'section' => 'level',
+            'description' => 'Fase belajar sekolah dasar.',
+            'status' => 'published',
+        ])->assertCreated()->assertJsonPath('data.section', 'level');
+        $this->assertDatabaseHas('curriculums', [
+            'id' => $curriculum->json('data.id'),
+            'section' => 'level',
+        ]);
     }
 
     public function test_all_protected_api_routes_return_401_without_a_token(): void
@@ -209,6 +275,14 @@ class AdminApiRoutesTest extends ApiTestCase
     public function test_admin_profile_routes_return_profile_and_record_principal_history(): void
     {
         $this->authenticateApiUser();
+        $firstTeacher = Teacher::query()->create([
+            'name' => 'Principal Pertama',
+            'subject' => 'Pimpinan',
+        ]);
+        $secondTeacher = Teacher::query()->create([
+            'name' => 'Principal Kedua',
+            'subject' => 'Pimpinan',
+        ]);
         $this->travelTo('2026-10-01 12:00:00');
 
         $this->getJson('/api/admin/profile')
@@ -216,18 +290,34 @@ class AdminApiRoutesTest extends ApiTestCase
             ->assertJsonPath('success', true);
 
         $this->putJson('/api/admin/profile', [
-            'name' => 'SMA Islam Terpadu An-Nur',
+            'name' => 'SD Plus An-Nur',
             'principal_name' => 'Principal Pertama',
             'principal_title' => 'Kepala Sekolah',
+            'principal_education' => 'S1 Pendidikan',
+            'principal_experience' => '15 tahun',
+            'principal_bio' => 'Mendidik dengan kasih sayang.',
+            'principal_photo' => '/images/principal-pertama.jpg',
+            'public_sections' => ['school_status' => 'Sekolah Dasar Swasta', 'utilities' => ['schedule' => 'Pagi / 6 hari']],
         ])
             ->assertOk()
             ->assertJsonPath('data.principal_name', 'Principal Pertama')
+            ->assertJsonPath('data.current_principal.education', 'S1 Pendidikan')
+            ->assertJsonPath('data.current_principal.photo', '/images/principal-pertama.jpg')
+            ->assertJsonPath('data.public_sections.school_status', 'Sekolah Dasar Swasta')
             ->assertJsonPath('data.principal_history.0.name', 'Principal Pertama');
+
+        $this->assertDatabaseHas('teachers', [
+            'id' => $firstTeacher->id,
+            'education' => 'S1 Pendidikan',
+            'experience' => '15 tahun',
+            'bio' => 'Mendidik dengan kasih sayang.',
+            'photo' => '/images/principal-pertama.jpg',
+        ]);
 
         $this->travelTo('2026-10-10 12:00:00');
 
         $this->putJson('/api/admin/profile', [
-            'name' => 'SMA Islam Terpadu An-Nur',
+            'name' => 'SD Plus An-Nur',
             'principal_name' => 'Principal Kedua',
             'principal_title' => 'Kepala Sekolah',
         ])
@@ -237,17 +327,62 @@ class AdminApiRoutesTest extends ApiTestCase
             ->assertJsonPath('data.principal_history.1.name', 'Principal Pertama');
 
         $this->assertDatabaseHas('principals', [
-            'name' => 'Principal Pertama',
+            'teacher_id' => $firstTeacher->id,
             'is_current' => false,
             'started_at' => '2026-10-01',
             'ended_at' => '2026-10-10',
         ]);
         $this->assertDatabaseHas('principals', [
-            'name' => 'Principal Kedua',
+            'teacher_id' => $secondTeacher->id,
             'is_current' => true,
             'started_at' => '2026-10-10',
             'ended_at' => null,
         ]);
+    }
+
+    public function test_admin_profile_legacy_principal_name_requires_one_matching_teacher(): void
+    {
+        $this->authenticateApiUser();
+
+        $this->putJson('/api/admin/profile', [
+            'name' => 'SD Plus An-Nur',
+            'principal_name' => 'Guru yang belum ada',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['principal_name']);
+
+        Teacher::query()->create(['name' => 'Nama Ganda', 'subject' => 'Pimpinan']);
+        Teacher::query()->create(['name' => 'Nama Ganda', 'subject' => 'Pimpinan']);
+
+        $this->putJson('/api/admin/profile', [
+            'name' => 'SD Plus An-Nur',
+            'principal_name' => 'Nama Ganda',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['principal_name']);
+
+        $this->assertDatabaseCount('principals', 0);
+    }
+
+    public function test_teacher_with_principal_history_cannot_be_deleted(): void
+    {
+        $this->authenticateApiUser();
+        $profile = SchoolProfile::query()->create(['name' => 'SD Plus An-Nur']);
+        $teacher = Teacher::query()->create([
+            'name' => 'Kepala Sekolah',
+            'subject' => 'Pimpinan',
+        ]);
+        Principal::query()->create([
+            'school_profile_id' => $profile->id,
+            'teacher_id' => $teacher->id,
+            'is_current' => true,
+        ]);
+
+        $this->deleteJson('/api/admin/teachers/'.$teacher->id)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['teacher']);
+
+        $this->assertDatabaseHas('teachers', ['id' => $teacher->id]);
     }
 
     public function test_crm_routes_list_update_note_and_delete_a_contact(): void

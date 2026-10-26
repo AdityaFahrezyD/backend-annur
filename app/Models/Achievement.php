@@ -16,6 +16,7 @@ class Achievement extends Model
         'level',
         'year',
         'recipient_name',
+        'organizer',
         'description',
         'image',
         'status',

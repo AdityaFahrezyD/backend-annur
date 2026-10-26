@@ -14,6 +14,8 @@ class Competition extends Model
         'title',
         'organizer',
         'category',
+        'level',
+        'display_status',
         'description',
         'registration_deadline',
         'event_date',
