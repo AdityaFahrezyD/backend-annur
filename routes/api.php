@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Admin\TeacherController;
 use App\Http\Controllers\Api\Admin\UploadController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PublicController;
+use App\Http\Middleware\CachePublicApiResponse;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,14 +19,16 @@ use Illuminate\Support\Facades\Route;
 | Public API Routes (Direct tanpa prefix v1)
 |--------------------------------------------------------------------------
 */
-Route::get('/profile', [PublicController::class, 'profile']);
-Route::get('/teachers', [PublicController::class, 'teachers']);
-Route::get('/achievements', [PublicController::class, 'achievements']);
-Route::get('/competitions', [PublicController::class, 'competitions']);
-Route::get('/curriculums', [PublicController::class, 'curriculums']);
-Route::get('/galleries', [PublicController::class, 'galleries']);
+Route::middleware(CachePublicApiResponse::class)->group(function () {
+    Route::get('/profile', [PublicController::class, 'profile']);
+    Route::get('/teachers', [PublicController::class, 'teachers']);
+    Route::get('/achievements', [PublicController::class, 'achievements']);
+    Route::get('/competitions', [PublicController::class, 'competitions']);
+    Route::get('/curriculums', [PublicController::class, 'curriculums']);
+    Route::get('/galleries', [PublicController::class, 'galleries']);
+    Route::get('/stats', [PublicController::class, 'stats']);
+});
 Route::post('/contact', [PublicController::class, 'submitContact']);
-Route::get('/stats', [PublicController::class, 'stats']);
 
 // Direct Login (tanpa prefix v1 atau auth)
 Route::post('/login', [AuthController::class, 'login']);

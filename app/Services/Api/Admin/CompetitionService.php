@@ -3,10 +3,13 @@
 namespace App\Services\Api\Admin;
 
 use App\Models\Competition;
+use App\Services\Api\PublicApiCache;
 use Illuminate\Database\Eloquent\Collection;
 
 class CompetitionService
 {
+    public function __construct(private PublicApiCache $publicApiCache) {}
+
     /** @param array<string, mixed> $filters */
     public function index(array $filters): Collection
     {
@@ -36,7 +39,10 @@ class CompetitionService
     /** @param array<string, mixed> $data */
     public function create(array $data): Competition
     {
-        return Competition::query()->create($data);
+        $competition = Competition::query()->create($data);
+        $this->invalidatePublicCache();
+
+        return $competition;
     }
 
     /** @param array<string, mixed> $data */
@@ -44,6 +50,7 @@ class CompetitionService
     {
         $competition = $this->find($id);
         $competition->update($data);
+        $this->invalidatePublicCache();
 
         return $competition;
     }
@@ -51,5 +58,11 @@ class CompetitionService
     public function delete(string $id): void
     {
         $this->find($id)->delete();
+        $this->invalidatePublicCache();
+    }
+
+    private function invalidatePublicCache(): void
+    {
+        $this->publicApiCache->invalidate('competitions', 'stats');
     }
 }

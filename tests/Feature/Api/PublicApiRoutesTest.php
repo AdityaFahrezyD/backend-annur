@@ -144,4 +144,61 @@ class PublicApiRoutesTest extends ApiTestCase
 
         $this->assertDatabaseCount('contact_messages', 0);
     }
+
+    public function test_public_cache_separates_filters_and_refreshes_after_admin_updates(): void
+    {
+        $teacher = Teacher::query()->create([
+            'name' => 'Guru Matematika',
+            'subject' => 'Matematika',
+        ]);
+        Teacher::query()->create([
+            'name' => 'Guru Bahasa',
+            'subject' => 'Bahasa',
+        ]);
+
+        $this->getJson('/api/teachers?search=Guru&subject=Matematika')
+            ->assertOk()
+            ->assertJsonPath('data.0.name', 'Guru Matematika');
+
+        $this->getJson('/api/teachers?search=Guru&subject=Bahasa')
+            ->assertOk()
+            ->assertJsonPath('data.0.name', 'Guru Bahasa');
+
+        Teacher::query()->whereKey($teacher->id)->update(['name' => 'Perubahan langsung']);
+
+        $this->getJson('/api/teachers?search=Guru&subject=Matematika')
+            ->assertOk()
+            ->assertJsonPath('data.0.name', 'Guru Matematika');
+
+        $this->authenticateApiUser();
+
+        $this->putJson('/api/admin/teachers/'.$teacher->id, [
+            'name' => 'Guru Baru',
+            'subject' => 'Matematika',
+        ])
+            ->assertOk();
+
+        $this->getJson('/api/teachers?search=Guru&subject=Matematika')
+            ->assertOk()
+            ->assertJsonPath('data.0.name', 'Guru Baru');
+    }
+
+    public function test_public_cache_can_be_disabled_with_zero_ttl(): void
+    {
+        config(['api-cache.public_ttl' => 0]);
+        $teacher = Teacher::query()->create([
+            'name' => 'Guru Sebelum',
+            'subject' => 'Matematika',
+        ]);
+
+        $this->getJson('/api/teachers?search=Guru')
+            ->assertOk()
+            ->assertJsonPath('data.0.name', 'Guru Sebelum');
+
+        $teacher->update(['name' => 'Guru Sesudah']);
+
+        $this->getJson('/api/teachers?search=Guru')
+            ->assertOk()
+            ->assertJsonPath('data.0.name', 'Guru Sesudah');
+    }
 }

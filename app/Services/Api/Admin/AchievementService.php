@@ -3,10 +3,13 @@
 namespace App\Services\Api\Admin;
 
 use App\Models\Achievement;
+use App\Services\Api\PublicApiCache;
 use Illuminate\Database\Eloquent\Collection;
 
 class AchievementService
 {
+    public function __construct(private PublicApiCache $publicApiCache) {}
+
     /** @param array<string, mixed> $filters */
     public function index(array $filters): Collection
     {
@@ -40,7 +43,10 @@ class AchievementService
     /** @param array<string, mixed> $data */
     public function create(array $data): Achievement
     {
-        return Achievement::query()->create($data);
+        $achievement = Achievement::query()->create($data);
+        $this->invalidatePublicCache();
+
+        return $achievement;
     }
 
     /** @param array<string, mixed> $data */
@@ -48,6 +54,7 @@ class AchievementService
     {
         $achievement = $this->find($id);
         $achievement->update($data);
+        $this->invalidatePublicCache();
 
         return $achievement;
     }
@@ -55,5 +62,11 @@ class AchievementService
     public function delete(string $id): void
     {
         $this->find($id)->delete();
+        $this->invalidatePublicCache();
+    }
+
+    private function invalidatePublicCache(): void
+    {
+        $this->publicApiCache->invalidate('achievements', 'stats');
     }
 }

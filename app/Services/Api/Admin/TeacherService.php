@@ -3,10 +3,13 @@
 namespace App\Services\Api\Admin;
 
 use App\Models\Teacher;
+use App\Services\Api\PublicApiCache;
 use Illuminate\Database\Eloquent\Collection;
 
 class TeacherService
 {
+    public function __construct(private PublicApiCache $publicApiCache) {}
+
     /** @param array<string, mixed> $filters */
     public function index(array $filters): Collection
     {
@@ -33,7 +36,10 @@ class TeacherService
     /** @param array<string, mixed> $data */
     public function create(array $data): Teacher
     {
-        return Teacher::query()->create($data);
+        $teacher = Teacher::query()->create($data);
+        $this->invalidatePublicCache();
+
+        return $teacher;
     }
 
     /** @param array<string, mixed> $data */
@@ -41,6 +47,7 @@ class TeacherService
     {
         $teacher = $this->find($id);
         $teacher->update($data);
+        $this->invalidatePublicCache();
 
         return $teacher;
     }
@@ -48,5 +55,11 @@ class TeacherService
     public function delete(string $id): void
     {
         $this->find($id)->delete();
+        $this->invalidatePublicCache();
+    }
+
+    private function invalidatePublicCache(): void
+    {
+        $this->publicApiCache->invalidate('teachers', 'stats');
     }
 }

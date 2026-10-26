@@ -3,11 +3,14 @@
 namespace App\Services\Api\Admin;
 
 use App\Models\SchoolProfile;
+use App\Services\Api\PublicApiCache;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 class SchoolProfileService
 {
+    public function __construct(private PublicApiCache $publicApiCache) {}
+
     public function show(): SchoolProfile
     {
         $profile = SchoolProfile::query()->firstOrCreate([], [
@@ -15,13 +18,17 @@ class SchoolProfileService
             'tagline' => 'Membentuk Generasi Berakhlak Mulia, Cerdas, dan Berprestasi Global',
         ]);
 
+        if ($profile->wasRecentlyCreated) {
+            $this->publicApiCache->invalidate('profile', 'stats');
+        }
+
         return $profile->load(['currentPrincipal', 'principalHistory']);
     }
 
     /** @param array<string, mixed> $data */
     public function update(array $data): SchoolProfile
     {
-        return DB::transaction(function () use ($data): SchoolProfile {
+        $profile = DB::transaction(function () use ($data): SchoolProfile {
             $profile = SchoolProfile::query()->firstOrCreate([]);
             $profile->update(Arr::except($data, [
                 'principal_name',
@@ -34,6 +41,10 @@ class SchoolProfileService
 
             return $profile->load(['currentPrincipal', 'principalHistory']);
         });
+
+        $this->publicApiCache->invalidate('profile', 'stats');
+
+        return $profile;
     }
 
     /** @param array<string, mixed> $data */
