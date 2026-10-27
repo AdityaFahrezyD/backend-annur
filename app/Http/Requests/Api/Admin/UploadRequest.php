@@ -23,7 +23,7 @@ class UploadRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => ['required', 'file', 'mimes:jpeg,png,jpg,webp,gif,pdf', 'max:5120'],
+            'file' => ['required', 'file', 'mimes:jpeg,png,jpg,webp,avif,gif,pdf', 'max:5120'],
         ];
     }
 
@@ -36,7 +36,7 @@ class UploadRequest extends FormRequest
     {
         return [
             'file.required' => 'Berkas belum dipilih.',
-            'file.mimes' => 'Format berkas hanya boleh berupa JPG, PNG, WEBP, GIF, atau PDF.',
+            'file.mimes' => 'Format berkas hanya boleh berupa JPG, PNG, WEBP, AVIF, GIF, atau PDF.',
             'file.max' => 'Ukuran berkas maksimal adalah 5MB.',
         ];
     }
