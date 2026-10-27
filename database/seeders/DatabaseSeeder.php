@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
             SchoolProfileSeeder::class,
             AchievementSeeder::class,
             CompetitionSeeder::class,
-            CurriculumSeeder::class,
+            CurriculumContentSeeder::class,
             GallerySeeder::class,
             ContactMessageSeeder::class,
         ]);

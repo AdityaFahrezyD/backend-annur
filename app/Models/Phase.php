@@ -6,17 +6,16 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Curriculum extends Model
+class Phase extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $table = 'curriculums';
+    protected $table = 'phase';
 
     protected $fillable = [
         'title',
-        'section',
+        'phase_name',
         'code',
-        'level',
         'description',
         'features',
         'order',

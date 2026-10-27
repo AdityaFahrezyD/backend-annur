@@ -5,8 +5,10 @@ namespace Tests\Feature\Api;
 use App\Models\Achievement;
 use App\Models\Competition;
 use App\Models\ContactMessage;
-use App\Models\Curriculum;
+use App\Models\CurriculumPillar;
 use App\Models\Gallery;
+use App\Models\HeroSlide;
+use App\Models\Phase;
 use App\Models\Principal;
 use App\Models\SchoolProfile;
 use App\Models\Teacher;
@@ -49,11 +51,29 @@ class AdminApiRoutesTest extends ApiTestCase
                 ],
                 'title',
             ],
-            'curriculums' => [
-                '/api/admin/curriculums',
-                Curriculum::class,
-                ['title' => 'Kurikulum Tahfiz', 'section' => 'pillar', 'description' => 'Program tahfiz.', 'status' => 'published'],
+            'curriculum-pillars' => [
+                '/api/admin/curriculum-pillars',
+                CurriculumPillar::class,
+                ['title' => 'Kurikulum Tahfiz', 'subtitle' => 'Program inti', 'description' => 'Program tahfiz.', 'status' => 'published'],
                 'title',
+            ],
+            'phases' => [
+                '/api/admin/phases',
+                Phase::class,
+                ['title' => 'Fase Fondasi', 'phase_name' => 'Fase A', 'description' => 'Fase belajar.', 'status' => 'published'],
+                'title',
+            ],
+            'hero-slides' => [
+                '/api/admin/hero-slides',
+                HeroSlide::class,
+                [
+                    'image' => '/storage/hero.jpg',
+                    'heading' => 'Selamat Datang',
+                    'subheading' => 'SD Plus An-Nur',
+                    'caption' => 'Pendidikan berkarakter.',
+                    'status' => 'published',
+                ],
+                'heading',
             ],
             'galleries' => [
                 '/api/admin/galleries',
@@ -177,17 +197,74 @@ class AdminApiRoutesTest extends ApiTestCase
             'level' => 'Kabupaten',
             'display_status' => 'Pendaftaran Dibuka',
         ]);
+    }
 
-        $curriculum = $this->postJson('/api/admin/curriculums', [
-            'title' => 'Kurikulum SD',
-            'section' => 'level',
-            'description' => 'Fase belajar sekolah dasar.',
+    public function test_hero_slide_button_fields_must_be_complete_and_use_safe_urls(): void
+    {
+        $this->authenticateApiUser();
+
+        $payload = [
+            'image' => '/storage/hero.jpg',
+            'heading' => 'Selamat Datang',
+            'subheading' => 'SD Plus An-Nur',
+            'caption' => 'Pendidikan berkarakter.',
             'status' => 'published',
-        ])->assertCreated()->assertJsonPath('data.section', 'level');
-        $this->assertDatabaseHas('curriculums', [
-            'id' => $curriculum->json('data.id'),
-            'section' => 'level',
-        ]);
+        ];
+
+        $this->postJson('/api/admin/hero-slides', [...$payload, 'button_label' => 'Daftar'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['button_url']);
+
+        $this->postJson('/api/admin/hero-slides', [...$payload, 'button_url' => '/pendaftaran'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['button_label']);
+
+        $this->postJson('/api/admin/hero-slides', [
+            ...$payload,
+            'button_label' => 'Daftar',
+            'button_url' => 'javascript:alert(1)',
+        ])->assertUnprocessable()->assertJsonValidationErrors(['button_url']);
+
+        $this->postJson('/api/admin/hero-slides', [
+            ...$payload,
+            'button_label' => 'Daftar',
+            'button_url' => '/pendaftaran',
+        ])->assertCreated()
+            ->assertJsonPath('data.button_label', 'Daftar')
+            ->assertJsonPath('data.button_url', '/pendaftaran');
+
+        $this->postJson('/api/admin/hero-slides', [
+            ...$payload,
+            'button_label' => 'Daftar',
+            'button_url' => 'https://annur.example/pendaftaran',
+        ])->assertCreated()
+            ->assertJsonPath('data.button_url', 'https://annur.example/pendaftaran');
+    }
+
+    public function test_new_cms_resources_reject_invalid_status_and_order(): void
+    {
+        $this->authenticateApiUser();
+
+        $resources = [
+            ['/api/admin/curriculum-pillars', ['title' => 'Pilar', 'description' => 'Deskripsi.']],
+            ['/api/admin/phases', ['title' => 'Fase', 'phase_name' => 'Fase A', 'description' => 'Deskripsi.']],
+            ['/api/admin/hero-slides', [
+                'image' => '/storage/hero.jpg',
+                'heading' => 'Judul',
+                'subheading' => 'Subjudul',
+                'caption' => 'Caption.',
+            ]],
+        ];
+
+        foreach ($resources as [$path, $payload]) {
+            $this->postJson($path, [...$payload, 'status' => 'archived'])
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors(['status']);
+
+            $this->postJson($path, [...$payload, 'status' => 'draft', 'order' => -1])
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors(['order']);
+        }
     }
 
     public function test_all_protected_api_routes_return_401_without_a_token(): void
@@ -208,7 +285,7 @@ class AdminApiRoutesTest extends ApiTestCase
             ['POST', '/api/admin/upload'],
         ];
 
-        foreach (['teachers', 'achievements', 'competitions', 'curriculums', 'galleries'] as $resource) {
+        foreach (['teachers', 'achievements', 'competitions', 'curriculum-pillars', 'phases', 'hero-slides', 'galleries'] as $resource) {
             $path = '/api/admin/'.$resource;
             $routes[] = ['GET', $path];
             $routes[] = ['POST', $path];
@@ -229,6 +306,13 @@ class AdminApiRoutesTest extends ApiTestCase
 
             $response->assertUnauthorized();
         }
+    }
+
+    public function test_legacy_admin_curriculum_route_is_removed(): void
+    {
+        $this->authenticateApiUser();
+
+        $this->getJson('/api/admin/curriculums')->assertNotFound();
     }
 
     public function test_unverified_user_cannot_access_admin_routes(): void

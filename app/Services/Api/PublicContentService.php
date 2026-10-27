@@ -5,11 +5,14 @@ namespace App\Services\Api;
 use App\Models\Achievement;
 use App\Models\Competition;
 use App\Models\ContactMessage;
-use App\Models\Curriculum;
+use App\Models\CurriculumPillar;
 use App\Models\Gallery;
+use App\Models\HeroSlide;
+use App\Models\Phase;
 use App\Models\SchoolProfile;
 use App\Models\Teacher;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection as SupportCollection;
 
 class PublicContentService
 {
@@ -86,12 +89,67 @@ class PublicContentService
         return $query->get();
     }
 
-    public function curriculums(): Collection
+    public function curriculumPillars(): Collection
     {
-        return Curriculum::query()
+        return CurriculumPillar::query()
             ->where('status', 'published')
             ->orderBy('order')
+            ->orderBy('id')
             ->get();
+    }
+
+    public function phases(): Collection
+    {
+        return Phase::query()
+            ->where('status', 'published')
+            ->orderBy('order')
+            ->orderBy('id')
+            ->get();
+    }
+
+    public function heroSlides(): Collection
+    {
+        return HeroSlide::query()
+            ->where('status', 'published')
+            ->orderBy('order')
+            ->orderBy('id')
+            ->get();
+    }
+
+    public function curriculums(): SupportCollection
+    {
+        $pillars = $this->curriculumPillars()->map(fn (CurriculumPillar $pillar): array => [
+            'id' => $pillar->id,
+            'title' => $pillar->title,
+            'section' => 'pillar',
+            'code' => $pillar->code,
+            'level' => $pillar->subtitle,
+            'description' => $pillar->description,
+            'features' => $pillar->features,
+            'order' => $pillar->order,
+            'status' => $pillar->status,
+            'created_at' => $pillar->created_at,
+            'updated_at' => $pillar->updated_at,
+        ]);
+
+        $phases = $this->phases()->map(fn (Phase $phase): array => [
+            'id' => $phase->id,
+            'title' => $phase->title,
+            'section' => 'level',
+            'code' => $phase->code,
+            'level' => $phase->phase_name,
+            'description' => $phase->description,
+            'features' => $phase->features,
+            'order' => $phase->order,
+            'status' => $phase->status,
+            'created_at' => $phase->created_at,
+            'updated_at' => $phase->updated_at,
+        ]);
+
+        return collect($pillars->all())
+            ->concat($phases->all())
+            ->sort(fn (array $left, array $right): int => [$left['order'], $left['id']] <=> [$right['order'], $right['id']])
+            ->values();
     }
 
     /** @param array<string, mixed> $filters */

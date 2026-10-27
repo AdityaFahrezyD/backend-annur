@@ -52,6 +52,30 @@ class PublicController extends Controller
         ]);
     }
 
+    public function curriculumPillars(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->publicContentService->curriculumPillars(),
+        ]);
+    }
+
+    public function phases(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->publicContentService->phases(),
+        ]);
+    }
+
+    public function heroSlides(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->publicContentService->heroSlides(),
+        ]);
+    }
+
     public function galleries(PublicContentRequest $request): JsonResponse
     {
         return response()->json([

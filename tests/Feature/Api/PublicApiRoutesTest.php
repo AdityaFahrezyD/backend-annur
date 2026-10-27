@@ -4,8 +4,10 @@ namespace Tests\Feature\Api;
 
 use App\Models\Achievement;
 use App\Models\Competition;
-use App\Models\Curriculum;
+use App\Models\CurriculumPillar;
 use App\Models\Gallery;
+use App\Models\HeroSlide;
+use App\Models\Phase;
 use App\Models\Principal;
 use App\Models\SchoolProfile;
 use App\Models\Teacher;
@@ -69,11 +71,19 @@ class PublicApiRoutesTest extends ApiTestCase
             'title' => 'Lomba Draft',
             'status' => 'draft',
         ]);
-        Curriculum::query()->create([
+        CurriculumPillar::query()->create([
             'title' => 'Kurikulum Tahfiz',
-            'section' => 'pillar',
+            'subtitle' => 'Program inti',
             'description' => 'Program pembelajaran tahfiz.',
             'status' => 'published',
+            'order' => 1,
+        ]);
+        Phase::query()->create([
+            'title' => 'Fase A',
+            'phase_name' => 'Kelas 1 - 2',
+            'description' => 'Fase fondasi.',
+            'status' => 'published',
+            'order' => 2,
         ]);
         Gallery::query()->create([
             'title' => 'Kegiatan Kelas',
@@ -134,7 +144,12 @@ class PublicApiRoutesTest extends ApiTestCase
 
         $this->getJson('/api/curriculums')
             ->assertOk()
-            ->assertJsonPath('data.0.title', 'Kurikulum Tahfiz');
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.title', 'Kurikulum Tahfiz')
+            ->assertJsonPath('data.0.section', 'pillar')
+            ->assertJsonPath('data.0.level', 'Program inti')
+            ->assertJsonPath('data.1.section', 'level')
+            ->assertJsonPath('data.1.level', 'Kelas 1 - 2');
 
         $this->getJson('/api/galleries?category=Kegiatan')
             ->assertOk()
@@ -147,6 +162,160 @@ class PublicApiRoutesTest extends ApiTestCase
             ->assertJsonPath('data.total_achievements', 1)
             ->assertJsonPath('data.total_competitions', 1)
             ->assertJsonPath('data.total_galleries', 1);
+    }
+
+    public function test_public_curriculum_and_hero_slide_routes_return_published_content_in_order(): void
+    {
+        CurriculumPillar::query()->create([
+            'title' => 'Pilar Kedua',
+            'description' => 'Pilar kedua.',
+            'order' => 2,
+            'status' => 'published',
+        ]);
+        CurriculumPillar::query()->create([
+            'title' => 'Pilar Pertama',
+            'description' => 'Pilar pertama.',
+            'order' => 1,
+            'status' => 'published',
+        ]);
+        CurriculumPillar::query()->create([
+            'title' => 'Pilar Draft',
+            'description' => 'Belum diterbitkan.',
+            'order' => 0,
+            'status' => 'draft',
+        ]);
+        Phase::query()->create([
+            'title' => 'Fase A',
+            'phase_name' => 'Kelas 1 - 2',
+            'description' => 'Fase fondasi.',
+            'order' => 1,
+            'status' => 'published',
+        ]);
+        Phase::query()->create([
+            'title' => 'Fase Draft',
+            'phase_name' => 'Belum terbit',
+            'description' => 'Belum diterbitkan.',
+            'order' => 0,
+            'status' => 'draft',
+        ]);
+        HeroSlide::query()->create([
+            'image' => '/storage/hero-kedua.jpg',
+            'heading' => 'Judul kedua',
+            'subheading' => 'Subjudul kedua',
+            'caption' => 'Caption kedua.',
+            'order' => 2,
+            'status' => 'published',
+        ]);
+        HeroSlide::query()->create([
+            'image' => '/storage/hero-pertama.jpg',
+            'heading' => 'Judul pertama',
+            'subheading' => 'Subjudul pertama',
+            'caption' => 'Caption pertama.',
+            'button_label' => 'Daftar sekarang',
+            'button_url' => '/pendaftaran',
+            'order' => 1,
+            'status' => 'published',
+        ]);
+        HeroSlide::query()->create([
+            'image' => '/storage/hero-draft.jpg',
+            'heading' => 'Judul draft',
+            'subheading' => 'Subjudul draft',
+            'caption' => 'Belum diterbitkan.',
+            'order' => 0,
+            'status' => 'draft',
+        ]);
+
+        $this->getJson('/api/curriculum-pillars')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.title', 'Pilar Pertama')
+            ->assertJsonPath('data.1.title', 'Pilar Kedua');
+
+        $this->getJson('/api/phases')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.phase_name', 'Kelas 1 - 2');
+
+        $this->getJson('/api/hero-slides')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.heading', 'Judul pertama')
+            ->assertJsonPath('data.0.button_label', 'Daftar sekarang')
+            ->assertJsonPath('data.0.button_url', '/pendaftaran')
+            ->assertJsonPath('data.1.heading', 'Judul kedua');
+    }
+
+    public function test_admin_updates_invalidate_cache_for_new_cms_resources(): void
+    {
+        config(['api-cache.public_ttl' => 300]);
+
+        $pillar = CurriculumPillar::query()->create([
+            'title' => 'Pilar Sebelum',
+            'description' => 'Deskripsi pilar.',
+            'order' => 1,
+            'status' => 'published',
+        ]);
+        $phase = Phase::query()->create([
+            'title' => 'Fase Sebelum',
+            'phase_name' => 'Fase A',
+            'description' => 'Deskripsi fase.',
+            'order' => 2,
+            'status' => 'published',
+        ]);
+        $slide = HeroSlide::query()->create([
+            'image' => '/storage/hero.jpg',
+            'heading' => 'Hero Sebelum',
+            'subheading' => 'Subjudul',
+            'caption' => 'Caption.',
+            'status' => 'published',
+        ]);
+
+        $this->getJson('/api/curriculum-pillars')
+            ->assertOk()
+            ->assertJsonPath('data.0.title', 'Pilar Sebelum');
+        $this->getJson('/api/phases')
+            ->assertOk()
+            ->assertJsonPath('data.0.title', 'Fase Sebelum');
+        $this->getJson('/api/curriculums')
+            ->assertOk()
+            ->assertJsonPath('data.1.title', 'Fase Sebelum');
+        $this->getJson('/api/hero-slides')
+            ->assertOk()
+            ->assertJsonPath('data.0.heading', 'Hero Sebelum');
+
+        $this->authenticateApiUser();
+
+        $this->putJson('/api/admin/curriculum-pillars/'.$pillar->id, [
+            'title' => 'Pilar Sesudah',
+            'description' => 'Deskripsi pilar.',
+            'status' => 'published',
+        ])->assertOk();
+        $this->putJson('/api/admin/phases/'.$phase->id, [
+            'title' => 'Fase Sesudah',
+            'phase_name' => 'Fase A',
+            'description' => 'Deskripsi fase.',
+            'status' => 'published',
+        ])->assertOk();
+        $this->putJson('/api/admin/hero-slides/'.$slide->id, [
+            'image' => '/storage/hero.jpg',
+            'heading' => 'Hero Sesudah',
+            'subheading' => 'Subjudul',
+            'caption' => 'Caption.',
+            'status' => 'published',
+        ])->assertOk();
+
+        $this->getJson('/api/curriculum-pillars')
+            ->assertOk()
+            ->assertJsonPath('data.0.title', 'Pilar Sesudah');
+        $this->getJson('/api/phases')
+            ->assertOk()
+            ->assertJsonPath('data.0.title', 'Fase Sesudah');
+        $this->getJson('/api/curriculums')
+            ->assertOk()
+            ->assertJsonPath('data.1.title', 'Fase Sesudah');
+        $this->getJson('/api/hero-slides')
+            ->assertOk()
+            ->assertJsonPath('data.0.heading', 'Hero Sesudah');
     }
 
     public function test_contact_route_creates_a_message(): void

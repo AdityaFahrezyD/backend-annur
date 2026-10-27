@@ -5,7 +5,7 @@ namespace App\Http\Requests\Api\Admin;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class SaveCurriculumRequest extends FormRequest
+class SavePhaseRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,12 +24,11 @@ class SaveCurriculumRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:200'],
-            'section' => ['required', 'in:pillar,level'],
+            'phase_name' => ['required', 'string', 'max:100'],
             'code' => ['nullable', 'string', 'max:50'],
-            'level' => ['nullable', 'string', 'max:100'],
             'description' => ['required', 'string'],
             'features' => ['nullable', 'array'],
-            'order' => ['integer'],
+            'order' => ['sometimes', 'integer', 'min:0'],
             'status' => ['required', 'in:draft,published'],
         ];
     }

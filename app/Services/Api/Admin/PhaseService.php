@@ -2,18 +2,18 @@
 
 namespace App\Services\Api\Admin;
 
-use App\Models\Curriculum;
+use App\Models\Phase;
 use App\Services\Api\PublicApiCache;
 use Illuminate\Database\Eloquent\Collection;
 
-class CurriculumService
+class PhaseService
 {
     public function __construct(private PublicApiCache $publicApiCache) {}
 
     /** @param array<string, mixed> $filters */
     public function index(array $filters): Collection
     {
-        $query = Curriculum::query()->orderBy('order')->orderBy('id');
+        $query = Phase::query()->orderBy('order')->orderBy('id');
 
         if (($filters['status'] ?? null) !== null && $filters['status'] !== '' && $filters['status'] !== 'all') {
             $query->where('status', $filters['status']);
@@ -22,28 +22,28 @@ class CurriculumService
         return $query->get();
     }
 
-    public function find(string $id): Curriculum
+    public function find(string $id): Phase
     {
-        return Curriculum::query()->findOrFail($id);
+        return Phase::query()->findOrFail($id);
     }
 
     /** @param array<string, mixed> $data */
-    public function create(array $data): Curriculum
+    public function create(array $data): Phase
     {
-        $curriculum = Curriculum::query()->create($data);
+        $phase = Phase::query()->create($data);
         $this->invalidatePublicCache();
 
-        return $curriculum;
+        return $phase;
     }
 
     /** @param array<string, mixed> $data */
-    public function update(string $id, array $data): Curriculum
+    public function update(string $id, array $data): Phase
     {
-        $curriculum = $this->find($id);
-        $curriculum->update($data);
+        $phase = $this->find($id);
+        $phase->update($data);
         $this->invalidatePublicCache();
 
-        return $curriculum;
+        return $phase;
     }
 
     public function delete(string $id): void
@@ -54,6 +54,6 @@ class CurriculumService
 
     private function invalidatePublicCache(): void
     {
-        $this->publicApiCache->invalidate('curriculums');
+        $this->publicApiCache->invalidate('phases', 'curriculums');
     }
 }

@@ -3,9 +3,11 @@
 use App\Http\Controllers\Api\Admin\AchievementController;
 use App\Http\Controllers\Api\Admin\CompetitionController;
 use App\Http\Controllers\Api\Admin\CrmContactController;
-use App\Http\Controllers\Api\Admin\CurriculumController;
+use App\Http\Controllers\Api\Admin\CurriculumPillarController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\GalleryController;
+use App\Http\Controllers\Api\Admin\HeroSlideController;
+use App\Http\Controllers\Api\Admin\PhaseController;
 use App\Http\Controllers\Api\Admin\SchoolProfileController;
 use App\Http\Controllers\Api\Admin\TeacherController;
 use App\Http\Controllers\Api\Admin\UploadController;
@@ -25,6 +27,9 @@ Route::middleware(CachePublicApiResponse::class)->group(function () {
     Route::get('/achievements', [PublicController::class, 'achievements']);
     Route::get('/competitions', [PublicController::class, 'competitions']);
     Route::get('/curriculums', [PublicController::class, 'curriculums']);
+    Route::get('/curriculum-pillars', [PublicController::class, 'curriculumPillars']);
+    Route::get('/phases', [PublicController::class, 'phases']);
+    Route::get('/hero-slides', [PublicController::class, 'heroSlides']);
     Route::get('/galleries', [PublicController::class, 'galleries']);
     Route::get('/stats', [PublicController::class, 'stats']);
 });
@@ -63,7 +68,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('teachers', TeacherController::class);
         Route::apiResource('achievements', AchievementController::class);
         Route::apiResource('competitions', CompetitionController::class);
-        Route::apiResource('curriculums', CurriculumController::class);
+        Route::apiResource('curriculum-pillars', CurriculumPillarController::class);
+        Route::apiResource('phases', PhaseController::class);
+        Route::apiResource('hero-slides', HeroSlideController::class);
         Route::apiResource('galleries', GalleryController::class);
 
         // CRM Contact Management
