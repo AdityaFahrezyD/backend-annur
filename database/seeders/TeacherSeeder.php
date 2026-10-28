@@ -41,9 +41,7 @@ class TeacherSeeder extends Seeder
                     'experience' => $experience,
                     'certifications' => $certifications,
                     'bio' => $bio,
-                    'photo' => $name === 'Ustadz H. Ahmad Fauzi, S.Pd.I., M.Pd.'
-                        ? '/images/kepala-sekolah.jpg'
-                        : null,
+                    'photo' => null,
                     'is_leadership' => $isLeadership,
                     'is_active' => true,
                     'order' => $index + 1,
