@@ -24,9 +24,7 @@ return new class extends Migration
             $table->uuid('handled_by')->nullable();
             $table->timestamp('last_contacted_at')->nullable();
             $table->timestamps();
-        });
 
-        Schema::table('contact_messages', function (Blueprint $table) {
             $table->foreign('handled_by')->references('id')->on('users')->nullOnDelete();
         });
     }

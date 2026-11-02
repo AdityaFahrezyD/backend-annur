@@ -18,9 +18,7 @@ return new class extends Migration
             $table->string('author_name')->default('Admin');
             $table->text('note');
             $table->timestamps();
-        });
 
-        Schema::table('contact_notes', function (Blueprint $table) {
             $table->foreign('contact_message_id')->references('id')->on('contact_messages')->cascadeOnDelete();
             $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
         });

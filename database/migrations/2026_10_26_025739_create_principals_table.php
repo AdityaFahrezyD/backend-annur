@@ -22,9 +22,6 @@ return new class extends Migration
             $table->boolean('is_current')->default(false);
             $table->timestamps();
 
-        });
-
-        Schema::table('principals', function (Blueprint $table) {
             $table->foreign('school_profile_id')->references('id')->on('school_profiles')->restrictOnDelete();
             $table->foreign('teacher_id')->references('id')->on('teachers')->restrictOnDelete();
         });
