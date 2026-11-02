@@ -5,8 +5,10 @@ use App\Http\Controllers\Api\Admin\CompetitionController;
 use App\Http\Controllers\Api\Admin\CrmContactController;
 use App\Http\Controllers\Api\Admin\CurriculumPillarController;
 use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\Admin\ExtracurricularController;
 use App\Http\Controllers\Api\Admin\GalleryController;
 use App\Http\Controllers\Api\Admin\HeroSlideController;
+use App\Http\Controllers\Api\Admin\OrganizationStructureController;
 use App\Http\Controllers\Api\Admin\PhaseController;
 use App\Http\Controllers\Api\Admin\SchoolProfileController;
 use App\Http\Controllers\Api\Admin\TeacherController;
@@ -31,6 +33,8 @@ Route::middleware(CachePublicApiResponse::class)->group(function () {
     Route::get('/phases', [PublicController::class, 'phases']);
     Route::get('/hero-slides', [PublicController::class, 'heroSlides']);
     Route::get('/galleries', [PublicController::class, 'galleries']);
+    Route::get('/extracurriculars', [PublicController::class, 'extracurriculars']);
+    Route::get('/organization-structures', [PublicController::class, 'organizationStructures']);
     Route::get('/stats', [PublicController::class, 'stats']);
 });
 Route::post('/contact', [PublicController::class, 'submitContact']);
@@ -72,6 +76,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('phases', PhaseController::class);
         Route::apiResource('hero-slides', HeroSlideController::class);
         Route::apiResource('galleries', GalleryController::class);
+        Route::apiResource('extracurriculars', ExtracurricularController::class);
+        Route::apiResource('organization-structures', OrganizationStructureController::class);
 
         // CRM Contact Management
         Route::get('/contacts', [CrmContactController::class, 'index']);

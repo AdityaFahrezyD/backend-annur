@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('principals', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('school_profile_id')->constrained()->restrictOnDelete();
-            $table->foreignUuid('teacher_id')->constrained('teachers')->restrictOnDelete();
+            $table->uuid('school_profile_id');
+            $table->uuid('teacher_id');
             $table->string('title')->nullable()->default('Kepala Sekolah An-Nur');
             $table->text('message')->nullable();
             $table->date('started_at')->nullable();
@@ -22,6 +22,11 @@ return new class extends Migration
             $table->boolean('is_current')->default(false);
             $table->timestamps();
 
+        });
+
+        Schema::table('principals', function (Blueprint $table) {
+            $table->foreign('school_profile_id')->references('id')->on('school_profiles')->restrictOnDelete();
+            $table->foreign('teacher_id')->references('id')->on('teachers')->restrictOnDelete();
         });
     }
 

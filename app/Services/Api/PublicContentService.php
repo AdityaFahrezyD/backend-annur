@@ -6,8 +6,10 @@ use App\Models\Achievement;
 use App\Models\Competition;
 use App\Models\ContactMessage;
 use App\Models\CurriculumPillar;
+use App\Models\Extracurricular;
 use App\Models\Gallery;
 use App\Models\HeroSlide;
+use App\Models\OrganizationStructure;
 use App\Models\Phase;
 use App\Models\SchoolProfile;
 use App\Models\Teacher;
@@ -165,6 +167,25 @@ class PublicContentService
         }
 
         return $query->get();
+    }
+
+    public function extracurriculars(): Collection
+    {
+        return Extracurricular::query()
+            ->with('images')
+            ->where('status', 'published')
+            ->orderBy('order')
+            ->orderBy('id')
+            ->get();
+    }
+
+    public function organizationStructures(): Collection
+    {
+        return OrganizationStructure::query()
+            ->where('status', 'published')
+            ->orderBy('order')
+            ->orderBy('id')
+            ->get();
     }
 
     /** @param array<string, mixed> $data */

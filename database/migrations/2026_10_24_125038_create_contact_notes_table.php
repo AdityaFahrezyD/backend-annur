@@ -13,11 +13,16 @@ return new class extends Migration
     {
         Schema::create('contact_notes', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('contact_message_id')->constrained('contact_messages')->cascadeOnDelete();
-            $table->foreignUuid('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->uuid('contact_message_id');
+            $table->uuid('user_id')->nullable();
             $table->string('author_name')->default('Admin');
             $table->text('note');
             $table->timestamps();
+        });
+
+        Schema::table('contact_notes', function (Blueprint $table) {
+            $table->foreign('contact_message_id')->references('id')->on('contact_messages')->cascadeOnDelete();
+            $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
         });
     }
 

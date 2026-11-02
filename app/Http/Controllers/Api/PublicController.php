@@ -84,6 +84,22 @@ class PublicController extends Controller
         ]);
     }
 
+    public function extracurriculars(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->publicContentService->extracurriculars(),
+        ]);
+    }
+
+    public function organizationStructures(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->publicContentService->organizationStructures(),
+        ]);
+    }
+
     public function submitContact(ContactSubmissionRequest $request): JsonResponse
     {
         $contact = $this->publicContentService->submitContact($request->validated(), $request->ip());

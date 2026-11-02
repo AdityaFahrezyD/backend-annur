@@ -20,6 +20,9 @@ class DatabaseSeeder extends Seeder
             CompetitionSeeder::class,
             CurriculumContentSeeder::class,
             GallerySeeder::class,
+            ExtracurricularSeeder::class,
+            ExtracurricularImageSeeder::class,
+            OrganizationStructureSeeder::class,
             ContactMessageSeeder::class,
         ]);
     }
