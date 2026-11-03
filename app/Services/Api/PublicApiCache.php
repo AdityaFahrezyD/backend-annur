@@ -7,21 +7,31 @@ use Illuminate\Support\Facades\DB;
 
 class PublicApiCache
 {
-    /** @return array{content: string, status: int, content_type: string}|null */
-    public function getResponse(string $scope, array $query): ?array
+    public function version(string $scope): int
     {
-        $response = Cache::get($this->cacheKey($scope, $query));
+        return (int) Cache::get($this->versionKey($scope), 1);
+    }
+
+    /** @return array{content: string, status: int, content_type: string}|null */
+    public function getResponse(string $scope, array $query, int $version, array $routeParameters = []): ?array
+    {
+        $response = Cache::get($this->cacheKey($scope, $query, $version, $routeParameters));
 
         return is_array($response) ? $response : null;
     }
 
     /** @param array{content: string, status: int, content_type: string} $response */
-    public function putResponse(string $scope, array $query, array $response): void
-    {
+    public function putResponse(
+        string $scope,
+        array $query,
+        array $response,
+        int $version,
+        array $routeParameters = [],
+    ): void {
         $ttl = (int) config('api-cache.public_ttl', 0);
 
         if ($ttl > 0) {
-            Cache::put($this->cacheKey($scope, $query), $response, $ttl);
+            Cache::put($this->cacheKey($scope, $query, $version, $routeParameters), $response, $ttl);
         }
     }
 
@@ -37,12 +47,16 @@ class PublicApiCache
         });
     }
 
-    private function cacheKey(string $scope, array $query): string
+    private function cacheKey(string $scope, array $query, int $version, array $routeParameters): string
     {
         ksort($query);
+        ksort($routeParameters);
 
-        $queryHash = hash('sha256', json_encode($query, JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE));
-        $version = (int) Cache::get($this->versionKey($scope), 1);
+        $keyData = $routeParameters === []
+            ? $query
+            : ['route' => $routeParameters, 'query' => $query];
+
+        $queryHash = hash('sha256', json_encode($keyData, JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE));
 
         return "public-api:{$scope}:v{$version}:{$queryHash}";
     }

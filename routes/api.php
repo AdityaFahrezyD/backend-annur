@@ -34,13 +34,14 @@ Route::middleware(CachePublicApiResponse::class)->group(function () {
     Route::get('/hero-slides', [PublicController::class, 'heroSlides']);
     Route::get('/galleries', [PublicController::class, 'galleries']);
     Route::get('/extracurriculars', [PublicController::class, 'extracurriculars']);
+    Route::get('/extracurriculars/{id}/images', [PublicController::class, 'extracurricularImages']);
     Route::get('/organization-structures', [PublicController::class, 'organizationStructures']);
     Route::get('/stats', [PublicController::class, 'stats']);
 });
-Route::post('/contact', [PublicController::class, 'submitContact']);
+Route::post('/contact', [PublicController::class, 'submitContact'])->middleware('throttle:5,1');
 
 // Direct Login (tanpa prefix v1 atau auth)
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
 Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
@@ -76,6 +77,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('phases', PhaseController::class);
         Route::apiResource('hero-slides', HeroSlideController::class);
         Route::apiResource('galleries', GalleryController::class);
+        Route::get('/extracurriculars/{id}/images', [ExtracurricularController::class, 'images']);
         Route::apiResource('extracurriculars', ExtracurricularController::class);
         Route::apiResource('organization-structures', OrganizationStructureController::class);
 

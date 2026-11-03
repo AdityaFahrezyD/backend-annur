@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\Admin\ContentIndexRequest;
+use App\Http\Requests\Api\Admin\PaginatedContentIndexRequest;
 use App\Http\Requests\Api\Admin\SaveExtracurricularRequest;
+use App\Http\Requests\Api\PaginationRequest;
 use App\Services\Api\Admin\ExtracurricularService;
 use Illuminate\Http\JsonResponse;
 
@@ -12,12 +13,16 @@ class ExtracurricularController extends Controller
 {
     public function __construct(private ExtracurricularService $extracurricularService) {}
 
-    public function index(ContentIndexRequest $request): JsonResponse
+    public function index(PaginatedContentIndexRequest $request): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => $this->extracurricularService->index($request->validated()),
-        ]);
+        return $this->paginatedResponse($this->extracurricularService->index($request->validated()));
+    }
+
+    public function images(string $id, PaginationRequest $request): JsonResponse
+    {
+        return $this->paginatedResponse(
+            $this->extracurricularService->images($id, $request->validated()),
+        );
     }
 
     public function store(SaveExtracurricularRequest $request): JsonResponse

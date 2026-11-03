@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\ContactSubmissionRequest;
+use App\Http\Requests\Api\PaginatedPublicContentRequest;
+use App\Http\Requests\Api\PaginationRequest;
 use App\Http\Requests\Api\PublicContentRequest;
 use App\Services\Api\PublicContentService;
 use Illuminate\Http\JsonResponse;
@@ -20,20 +22,14 @@ class PublicController extends Controller
         ]);
     }
 
-    public function teachers(PublicContentRequest $request): JsonResponse
+    public function teachers(PaginatedPublicContentRequest $request): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => $this->publicContentService->teachers($request->validated()),
-        ]);
+        return $this->paginatedResponse($this->publicContentService->teachers($request->validated()));
     }
 
-    public function achievements(PublicContentRequest $request): JsonResponse
+    public function achievements(PaginatedPublicContentRequest $request): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => $this->publicContentService->achievements($request->validated()),
-        ]);
+        return $this->paginatedResponse($this->publicContentService->achievements($request->validated()));
     }
 
     public function competitions(PublicContentRequest $request): JsonResponse
@@ -76,20 +72,21 @@ class PublicController extends Controller
         ]);
     }
 
-    public function galleries(PublicContentRequest $request): JsonResponse
+    public function galleries(PaginatedPublicContentRequest $request): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => $this->publicContentService->galleries($request->validated()),
-        ]);
+        return $this->paginatedResponse($this->publicContentService->galleries($request->validated()));
     }
 
-    public function extracurriculars(): JsonResponse
+    public function extracurriculars(PaginationRequest $request): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => $this->publicContentService->extracurriculars(),
-        ]);
+        return $this->paginatedResponse($this->publicContentService->extracurriculars($request->validated()));
+    }
+
+    public function extracurricularImages(string $id, PaginationRequest $request): JsonResponse
+    {
+        return $this->paginatedResponse(
+            $this->publicContentService->extracurricularImages($id, $request->validated()),
+        );
     }
 
     public function organizationStructures(): JsonResponse

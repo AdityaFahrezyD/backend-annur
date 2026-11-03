@@ -13,7 +13,10 @@ use App\Models\OrganizationStructure;
 use App\Models\Phase;
 use App\Models\SchoolProfile;
 use App\Models\Teacher;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection as SupportCollection;
 
 class PublicContentService
@@ -24,7 +27,7 @@ class PublicContentService
     }
 
     /** @param array<string, mixed> $filters */
-    public function teachers(array $filters): Collection
+    public function teachers(array $filters): LengthAwarePaginator
     {
         $query = Teacher::query()
             ->where('is_active', true)
@@ -45,11 +48,11 @@ class PublicContentService
             $query->where('subject', 'like', "%{$filters['subject']}%");
         }
 
-        return $query->get();
+        return $this->paginate($query, $filters);
     }
 
     /** @param array<string, mixed> $filters */
-    public function achievements(array $filters): Collection
+    public function achievements(array $filters): LengthAwarePaginator
     {
         $query = Achievement::query()
             ->where('status', 'published')
@@ -74,7 +77,7 @@ class PublicContentService
             });
         }
 
-        return $query->get();
+        return $this->paginate($query, $filters);
     }
 
     /** @param array<string, mixed> $filters */
@@ -155,7 +158,7 @@ class PublicContentService
     }
 
     /** @param array<string, mixed> $filters */
-    public function galleries(array $filters): Collection
+    public function galleries(array $filters): LengthAwarePaginator
     {
         $query = Gallery::query()
             ->where('status', 'published')
@@ -166,17 +169,32 @@ class PublicContentService
             $query->where('category', $filters['category']);
         }
 
-        return $query->get();
+        return $this->paginate($query, $filters);
     }
 
-    public function extracurriculars(): Collection
+    /** @param array<string, mixed> $pagination */
+    public function extracurriculars(array $pagination): LengthAwarePaginator
     {
-        return Extracurricular::query()
+        $query = Extracurricular::query()
             ->with('images')
             ->where('status', 'published')
             ->orderBy('order')
-            ->orderBy('id')
-            ->get();
+            ->orderBy('id');
+
+        return $this->paginate($query, $pagination);
+    }
+
+    /** @param array<string, mixed> $pagination */
+    public function extracurricularImages(string $id, array $pagination): LengthAwarePaginator
+    {
+        $extracurricular = Extracurricular::query()
+            ->where('status', 'published')
+            ->findOrFail($id);
+        $page = isset($pagination['page']) ? (int) $pagination['page'] : null;
+
+        return $extracurricular->images()
+            ->paginate((int) ($pagination['per_page'] ?? 10), ['*'], 'page', $page)
+            ->appends(Arr::except($pagination, ['page']));
     }
 
     public function organizationStructures(): Collection
@@ -215,5 +233,14 @@ class PublicContentService
             'total_galleries' => Gallery::query()->where('status', 'published')->count(),
             'custom_stats' => $profile?->stats,
         ];
+    }
+
+    /** @param array<string, mixed> $filters */
+    private function paginate(Builder $query, array $filters): LengthAwarePaginator
+    {
+        $page = isset($filters['page']) ? (int) $filters['page'] : null;
+
+        return $query->paginate((int) ($filters['per_page'] ?? 10), ['*'], 'page', $page)
+            ->appends(Arr::except($filters, ['page']));
     }
 }

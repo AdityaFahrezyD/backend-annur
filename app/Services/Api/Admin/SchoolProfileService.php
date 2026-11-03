@@ -47,7 +47,7 @@ class SchoolProfileService
             return $profile->load(['currentPrincipal.teacher', 'principalHistory.teacher']);
         });
 
-        $this->publicApiCache->invalidate('profile', 'stats');
+        $this->publicApiCache->invalidate('profile', 'stats', 'teachers');
 
         return $profile;
     }

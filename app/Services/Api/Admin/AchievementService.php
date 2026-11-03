@@ -4,14 +4,15 @@ namespace App\Services\Api\Admin;
 
 use App\Models\Achievement;
 use App\Services\Api\PublicApiCache;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Arr;
 
 class AchievementService
 {
     public function __construct(private PublicApiCache $publicApiCache) {}
 
     /** @param array<string, mixed> $filters */
-    public function index(array $filters): Collection
+    public function index(array $filters): LengthAwarePaginator
     {
         $query = Achievement::query()->orderByDesc('year')->orderByDesc('id');
 
@@ -32,7 +33,10 @@ class AchievementService
             });
         }
 
-        return $query->get();
+        $page = isset($filters['page']) ? (int) $filters['page'] : null;
+
+        return $query->paginate((int) ($filters['per_page'] ?? 10), ['*'], 'page', $page)
+            ->appends(Arr::except($filters, ['page']));
     }
 
     public function find(string $id): Achievement

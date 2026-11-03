@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\Admin\ContentIndexRequest;
+use App\Http\Requests\Api\Admin\PaginatedContentIndexRequest;
 use App\Http\Requests\Api\Admin\SaveAchievementRequest;
 use App\Services\Api\Admin\AchievementService;
 use Illuminate\Http\JsonResponse;
@@ -12,12 +12,9 @@ class AchievementController extends Controller
 {
     public function __construct(private AchievementService $achievementService) {}
 
-    public function index(ContentIndexRequest $request): JsonResponse
+    public function index(PaginatedContentIndexRequest $request): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => $this->achievementService->index($request->validated()),
-        ]);
+        return $this->paginatedResponse($this->achievementService->index($request->validated()));
     }
 
     public function store(SaveAchievementRequest $request): JsonResponse

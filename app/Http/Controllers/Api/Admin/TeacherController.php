@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\Admin\ContentIndexRequest;
+use App\Http\Requests\Api\Admin\PaginatedContentIndexRequest;
 use App\Http\Requests\Api\Admin\SaveTeacherRequest;
 use App\Services\Api\Admin\TeacherService;
 use Illuminate\Http\JsonResponse;
@@ -12,12 +12,9 @@ class TeacherController extends Controller
 {
     public function __construct(private TeacherService $teacherService) {}
 
-    public function index(ContentIndexRequest $request): JsonResponse
+    public function index(PaginatedContentIndexRequest $request): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => $this->teacherService->index($request->validated()),
-        ]);
+        return $this->paginatedResponse($this->teacherService->index($request->validated()));
     }
 
     public function store(SaveTeacherRequest $request): JsonResponse

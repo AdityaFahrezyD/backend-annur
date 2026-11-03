@@ -24,7 +24,14 @@ class CachePublicApiResponse
         }
 
         $scope = Str::after($route->uri(), 'api/');
-        $cachedResponse = $this->publicApiCache->getResponse($scope, $request->query());
+        $routeParameters = $route->parameters();
+        $version = $this->publicApiCache->version($scope);
+        $cachedResponse = $this->publicApiCache->getResponse(
+            $scope,
+            $request->query(),
+            $version,
+            $routeParameters,
+        );
 
         if ($cachedResponse !== null) {
             return response($cachedResponse['content'], $cachedResponse['status'])
@@ -34,11 +41,17 @@ class CachePublicApiResponse
         $response = $next($request);
 
         if ($response instanceof JsonResponse && $response->isSuccessful()) {
-            $this->publicApiCache->putResponse($scope, $request->query(), [
-                'content' => $response->getContent(),
-                'status' => $response->getStatusCode(),
-                'content_type' => $response->headers->get('Content-Type', 'application/json'),
-            ]);
+            $this->publicApiCache->putResponse(
+                $scope,
+                $request->query(),
+                [
+                    'content' => $response->getContent(),
+                    'status' => $response->getStatusCode(),
+                    'content_type' => $response->headers->get('Content-Type', 'application/json'),
+                ],
+                $version,
+                $routeParameters,
+            );
         }
 
         return $response;

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\Admin\ContentIndexRequest;
+use App\Http\Requests\Api\Admin\PaginatedContentIndexRequest;
 use App\Http\Requests\Api\Admin\SaveGalleryRequest;
 use App\Services\Api\Admin\GalleryService;
 use Illuminate\Http\JsonResponse;
@@ -12,12 +12,9 @@ class GalleryController extends Controller
 {
     public function __construct(private GalleryService $galleryService) {}
 
-    public function index(ContentIndexRequest $request): JsonResponse
+    public function index(PaginatedContentIndexRequest $request): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => $this->galleryService->index($request->validated()),
-        ]);
+        return $this->paginatedResponse($this->galleryService->index($request->validated()));
     }
 
     public function store(SaveGalleryRequest $request): JsonResponse
