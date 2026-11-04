@@ -25,6 +25,7 @@ class SaveOrganizationStructureRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:200'],
             'position' => ['required', 'string', 'max:200'],
+            'image' => ['nullable', 'string', 'max:255'],
             'parent_id' => ['nullable', 'uuid', 'exists:organization_structures,id'],
             'order' => ['sometimes', 'integer', 'min:0'],
             'status' => ['required', 'in:draft,published'],

@@ -15,16 +15,14 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name', 200);
             $table->string('position', 200);
+            $table->string('image')->nullable();
             $table->uuid('parent_id')->nullable();
             $table->integer('order')->default(0);
             $table->enum('status', ['draft', 'published'])->default('published');
             $table->timestamps();
 
             $table->foreign('parent_id')->references('id')->on('organization_structures')->nullOnDelete();
-
         });
-
-   
     }
 
     /**
