@@ -20,7 +20,9 @@ return new class extends Migration
             $table->integer('order')->default(0);
             $table->enum('status', ['draft', 'published'])->default('published');
             $table->timestamps();
+        });
 
+        Schema::table('organization_structures', function (Blueprint $table) {
             $table->foreign('parent_id')->references('id')->on('organization_structures')->nullOnDelete();
         });
     }
